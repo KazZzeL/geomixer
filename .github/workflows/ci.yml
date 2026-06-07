@@ -22,7 +22,6 @@ jobs:
         uses: actions/setup-node@v6.4.0
         with:
           node-version: "22"
-          cache: npm
 
       - name: Install commitlint
         run: npm install -D @commitlint/cli @commitlint/config-conventional
