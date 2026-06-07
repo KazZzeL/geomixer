@@ -1,0 +1,13 @@
+geosite:
+  inputs:
+    - name: geosite_cn
+      kind: geofile
+      url: https://example.com/geosite.dat
+  outputs:
+    - name: geosite.dat
+      categories:
+        - name: CN
+          steps:
+            - action: add
+              input: geosite_cn
+              include: ["CN"]

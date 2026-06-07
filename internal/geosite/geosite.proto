@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package internal.geosite;
+option go_package = "github.com/KazZzeL/geomixer/internal/geosite";
+
+message Domain {
+  // Type of domain value.
+  enum Type {
+    // The value is used as a sub string.
+    substr = 0;
+    // The value is used as a regular expression.
+    regex = 1;
+    // The value is a domain.
+    domain = 2;
+    // The value is a full domain.
+    full = 3;
+  }
+
+  // Domain matching type.
+  Type type = 1;
+
+  // Domain value.
+  string value = 2;
+
+  message Attribute {
+    string key = 1;
+
+    oneof typed_value {
+      bool bool_value = 2;
+      int64 int_value = 3;
+    }
+  }
+  // Attributes of this domain. May be used for filtering.
+  repeated Attribute attributes = 3;
+}
+
+message Category {
+  string name = 1;
+  repeated Domain domains = 2;
+}
+
+message GeoSite {
+  repeated Category categories = 1;
+}

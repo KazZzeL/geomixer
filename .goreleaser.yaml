@@ -1,0 +1,108 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+version: 2
+
+project_name: geomixer
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: geomixer
+    main: .
+    binary: geomixer
+    ldflags:
+      - -s -w -extldflags "-static"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - arm64
+      - amd64
+
+archives:
+  - id: binary
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  disable: false
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    args:
+      - "sign-blob"
+      - "--bundle=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  disable: false
+  use: github
+  sort: asc
+  abbrev: 7
+  groups:
+    - title: "Features"
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: "Security"
+      regexp: '^.*?sec(\(.+\))??!?:.+$'
+      order: 1
+    - title: "Bug fixes"
+      regexp: '^.*?(fix|refactor)(\(.+\))??!?:.+$'
+      order: 2
+    - title: "Renovate"
+      regexp: ^.*?renovate?(\(.+\))??!?:.+$
+      order: 3
+    - title: "Documentation"
+      regexp: ^.*?docs?(\(.+\))??!?:.+$
+      order: 4
+    - title: "Misc"
+      order: 5
+  filters:
+    exclude:
+      - "^test:"
+      - "^test\\("
+      - "^chore: typo$"
+      - "merge conflict"
+      - Merge pull request
+      - Merge branch
+      - go mod tidy
+
+release:
+  disable: false
+  name_template: "v{{ .Version }}"
+  mode: replace
+
+  header: |
+    ## {{.ProjectName}} {{.Version}} ({{.Date}})
+
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).

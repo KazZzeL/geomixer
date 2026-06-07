@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/KazZzeL/geomixer/jsonschema/geomixer.schema.json",
+  "$ref": "#/$defs/Config",
+  "$defs": {
+    "Category": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Category name",
+          "examples": [
+            "CN"
+          ]
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array",
+          "description": "Ordered list of transformation steps"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "steps"
+      ]
+    },
+    "Config": {
+      "properties": {
+        "geosite": {
+          "$ref": "#/$defs/Runner",
+          "description": "Domain (geosite) rules configuration"
+        },
+        "geoip": {
+          "$ref": "#/$defs/Runner",
+          "description": "IP (geoip) rules configuration"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Input": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique input name referenced by steps"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "geofile",
+            "plain",
+            "list"
+          ],
+          "description": "Soure type"
+        },
+        "url": {
+          "type": "string",
+          "description": "Remote URL to fetch (required for geofile/plain)",
+          "examples": [
+            "https://example.com/data.dat"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "description": "Local filesystem path (alternative to url)",
+          "examples": [
+            "./data.dat"
+          ]
+        },
+        "list": {
+          "items": {
+            "type": "string",
+            "examples": [
+              "10.0.0.0/8",
+              "example.com"
+            ]
+          },
+          "type": "array",
+          "description": "Inline list of CIDRs or domain rules (required for list kind)"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "kind"
+      ]
+    },
+    "Options": {
+      "properties": {
+        "ignoreIPv4": {
+          "type": "boolean",
+          "description": "Skip IPv4 CIDRs from geoip input"
+        },
+        "ignoreIPv6": {
+          "type": "boolean",
+          "description": "Skip IPv6 CIDRs from geoip input"
+        },
+        "resetAttributes": {
+          "type": "boolean",
+          "description": "Clear all existing domain attributes before appending"
+        },
+        "deleteAttributes": {
+          "items": {
+            "type": "string",
+            "examples": [
+              "ads"
+            ]
+          },
+          "type": "array",
+          "description": "Remove specific attributes by key"
+        },
+        "appendAttributes": {
+          "items": {
+            "type": "string",
+            "examples": [
+              "tracking"
+            ]
+          },
+          "type": "array",
+          "description": "Add new boolean attributes"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Output": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Output filename",
+          "examples": [
+            "geosite.dat"
+          ]
+        },
+        "dir": {
+          "type": "string",
+          "description": "Output directory override",
+          "examples": [
+            "./dist"
+          ]
+        },
+        "categories": {
+          "items": {
+            "$ref": "#/$defs/Category"
+          },
+          "type": "array",
+          "description": "List of categories to build"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "categories"
+      ]
+    },
+    "Runner": {
+      "properties": {
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/Input"
+          },
+          "type": "array",
+          "description": "Named data sources"
+        },
+        "outputs": {
+          "items": {
+            "$ref": "#/$defs/Output"
+          },
+          "type": "array",
+          "description": "Output files to generate"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "inputs",
+        "outputs"
+      ]
+    },
+    "Step": {
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "add",
+            "del"
+          ],
+          "description": "Operation to perform"
+        },
+        "input": {
+          "type": "string",
+          "description": "Name of the input to use"
+        },
+        "include": {
+          "items": {
+            "type": "string",
+            "examples": [
+              "CN"
+            ]
+          },
+          "type": "array",
+          "description": "Only process categories in this list"
+        },
+        "exclude": {
+          "items": {
+            "type": "string",
+            "examples": [
+              "RU"
+            ]
+          },
+          "type": "array",
+          "description": "Skip categories in this list"
+        },
+        "options": {
+          "$ref": "#/$defs/Options",
+          "description": "Additional transformation options"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "action",
+        "input"
+      ]
+    }
+  }
+}
