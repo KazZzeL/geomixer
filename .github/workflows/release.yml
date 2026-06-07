@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -27,13 +28,17 @@ jobs:
       - name: Run tests
         run: go test -v -count=1 -race ./...
 
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.1.2
-
       - name: GoReleaser release
-        uses: goreleaser/goreleaser-action@v7.2.2
+        id: goreleaser
+        uses: goreleaser/goreleaser-action@5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89 # v7.2.2
         with:
           version-file: .tool-versions
-          args: release --timeout 5m --clean --verbose --skip announce
+          args: release --timeout=5m --clean --verbose --skip=announce
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest checksums
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-checksums: ./dist/geomixer-${{ fromJSON(steps.goreleaser.outputs.metadata).version }}-checksums.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
