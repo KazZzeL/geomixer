@@ -50,6 +50,7 @@ jobs:
         with:
           version-file: .tool-versions
           install-mode: binary
+          args: --fix=false
 
   test:
     runs-on: ubuntu-latest
