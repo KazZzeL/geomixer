@@ -1,6 +1,6 @@
 # geomixer
 
-Command-line tool to merge and transform v2fly-compatible geosite and geoip rule files.
+Command-line tool to merge and transform Xray-compatible geosite and geoip rule files.
 
 ## Features
 
@@ -8,7 +8,7 @@ Command-line tool to merge and transform v2fly-compatible geosite and geoip rule
 - **Filter** by IP type (IPv4/IPv6) and categories
 - **Transform** domain attributes (append, delete, reset)
 - **Subdomain pruning** — removes child entries when a parent domain rule exists
-- **Supports both** v2fly protobuf (`.dat`) and plain-text formats
+- **Supports both** Xray protobuf (`.dat`) and plain-text formats
 
 ## Installation
 
