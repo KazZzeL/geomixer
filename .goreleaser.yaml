@@ -50,6 +50,7 @@ docker_digest:
 changelog:
   disable: false
   use: github
+  format: '{{ .SHA }}: {{ .Message }} (@{{ with .Author.Username }}{{ . }}{{ else }}{{ .Author.Name }})'
   sort: asc
   abbrev: 7
   groups:
