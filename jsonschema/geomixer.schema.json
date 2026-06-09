@@ -28,6 +28,18 @@
       ]
     },
     "Config": {
+      "anyOf": [
+        {
+          "required": [
+            "geosite"
+          ]
+        },
+        {
+          "required": [
+            "geoip"
+          ]
+        }
+      ],
       "properties": {
         "geosite": {
           "$ref": "#/$defs/Runner",
@@ -42,10 +54,48 @@
       "type": "object"
     },
     "Input": {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "geofile",
+              "plain"
+            ]
+          }
+        }
+      },
+      "then": {
+        "oneOf": [
+          {
+            "required": [
+              "url"
+            ]
+          },
+          {
+            "required": [
+              "path"
+            ]
+          }
+        ]
+      },
+      "else": {
+        "if": {
+          "properties": {
+            "kind": {
+              "const": "list"
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "list"
+          ]
+        }
+      },
       "properties": {
         "name": {
           "type": "string",
-          "description": "Unique input name referenced by steps"
+          "description": "Unique name referenced by steps"
         },
         "kind": {
           "type": "string",
@@ -54,18 +104,18 @@
             "plain",
             "list"
           ],
-          "description": "Soure type"
+          "description": "Source type"
         },
         "url": {
           "type": "string",
-          "description": "Remote URL to fetch (required for geofile/plain)",
+          "description": "Remote URL for geofile or plain input",
           "examples": [
             "https://example.com/data.dat"
           ]
         },
         "path": {
           "type": "string",
-          "description": "Local filesystem path (alternative to url)",
+          "description": "Local file path as alternative to remote url",
           "examples": [
             "./data.dat"
           ]
@@ -79,7 +129,7 @@
             ]
           },
           "type": "array",
-          "description": "Inline list of CIDRs or domain rules (required for list kind)"
+          "description": "Inline CIDR or domain rules for list input"
         }
       },
       "additionalProperties": false,
@@ -91,19 +141,23 @@
     },
     "Options": {
       "properties": {
-        "ignoreIPv4": {
+        "ignore_ip_v4": {
           "type": "boolean",
-          "description": "Skip IPv4 CIDRs from geoip input"
+          "description": "Drop IPv4 CIDRs from geoip processing"
         },
-        "ignoreIPv6": {
+        "ignore_ip_v6": {
           "type": "boolean",
-          "description": "Skip IPv6 CIDRs from geoip input"
+          "description": "Drop IPv6 CIDRs from geoip processing"
         },
-        "resetAttributes": {
+        "skip_attrs_on_dedup": {
           "type": "boolean",
-          "description": "Clear all existing domain attributes before appending"
+          "description": "When true dedup uses domain without attrs so same domain with different attrs is merged"
         },
-        "deleteAttributes": {
+        "reset_attrs": {
+          "type": "boolean",
+          "description": "Remove all existing domain attributes before applying other options"
+        },
+        "delete_attrs": {
           "items": {
             "type": "string",
             "examples": [
@@ -111,9 +165,9 @@
             ]
           },
           "type": "array",
-          "description": "Remove specific attributes by key"
+          "description": "Drop specific attribute keys from domain"
         },
-        "appendAttributes": {
+        "append_attrs": {
           "items": {
             "type": "string",
             "examples": [
@@ -121,7 +175,7 @@
             ]
           },
           "type": "array",
-          "description": "Add new boolean attributes"
+          "description": "Add boolean attributes to domain rules"
         }
       },
       "additionalProperties": false,
@@ -190,11 +244,11 @@
             "add",
             "del"
           ],
-          "description": "Operation to perform"
+          "description": "Operation to perform on matched input"
         },
         "input": {
           "type": "string",
-          "description": "Name of the input to use"
+          "description": "Reference to a named input defined above"
         },
         "include": {
           "items": {
@@ -204,7 +258,7 @@
             ]
           },
           "type": "array",
-          "description": "Only process categories in this list"
+          "description": "Process only these input categories"
         },
         "exclude": {
           "items": {
@@ -214,11 +268,11 @@
             ]
           },
           "type": "array",
-          "description": "Skip categories in this list"
+          "description": "Skip these input categories"
         },
         "options": {
           "$ref": "#/$defs/Options",
-          "description": "Additional transformation options"
+          "description": "Per-step transformation options"
         }
       },
       "additionalProperties": false,

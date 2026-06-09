@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/invopop/jsonschema"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,11 +39,11 @@ var (
 type (
 	// Input describes a named data source.
 	Input struct {
-		Name string    `json:"name"           yaml:"name" jsonschema:"description=Unique input name referenced by steps"`
-		Kind InputKind `json:"kind"           yaml:"kind" jsonschema:"description=Soure type,enum=geofile,enum=plain,enum=list"`
-		URL  string    `json:"url,omitempty"  yaml:"url"  jsonschema:"description=Remote URL to fetch (required for geofile/plain),example=https://example.com/data.dat"`
-		Path string    `json:"path,omitempty" yaml:"path" jsonschema:"description=Local filesystem path (alternative to url),example=./data.dat"`
-		List []string  `json:"list,omitempty" yaml:"list" jsonschema:"description=Inline list of CIDRs or domain rules (required for list kind),example=10.0.0.0/8,example=example.com"`
+		Name string    `json:"name"           yaml:"name" jsonschema:"description=Unique name referenced by steps"`
+		Kind InputKind `json:"kind"           yaml:"kind" jsonschema:"description=Source type,enum=geofile,enum=plain,enum=list"`
+		URL  string    `json:"url,omitempty"  yaml:"url"  jsonschema:"description=Remote URL for geofile or plain input,example=https://example.com/data.dat"`
+		Path string    `json:"path,omitempty" yaml:"path" jsonschema:"description=Local file path as alternative to remote url,example=./data.dat"`
+		List []string  `json:"list,omitempty" yaml:"list" jsonschema:"description=Inline CIDR or domain rules for list input,example=10.0.0.0/8,example=example.com"`
 	}
 
 	// Options defines per-step transformations.
@@ -58,11 +59,11 @@ type (
 
 	// Step is a single transformation: add or remove domains/CIDRs from an input.
 	Step struct {
-		Action  StepAction `json:"action"            yaml:"action"  jsonschema:"description=Operation to perform,enum=add,enum=del"`
-		Input   string     `json:"input"             yaml:"input"   jsonschema:"description=Name of the input to use"`
-		Include []string   `json:"include,omitempty" yaml:"include" jsonschema:"description=Only process categories in this list,example=CN"`
-		Exclude []string   `json:"exclude,omitempty" yaml:"exclude" jsonschema:"description=Skip categories in this list,example=RU"`
-		Options *Options   `json:"options,omitempty" yaml:"options" jsonschema:"description=Additional transformation options"`
+		Action  StepAction `json:"action"            yaml:"action"  jsonschema:"description=Operation to perform on matched input,enum=add,enum=del"`
+		Input   string     `json:"input"             yaml:"input"   jsonschema:"description=Reference to a named input defined above"`
+		Include []string   `json:"include,omitempty" yaml:"include" jsonschema:"description=Process only these input categories,example=CN"`
+		Exclude []string   `json:"exclude,omitempty" yaml:"exclude" jsonschema:"description=Skip these input categories,example=RU"`
+		Options *Options   `json:"options,omitempty" yaml:"options" jsonschema:"description=Per-step transformation options"`
 	}
 
 	// Category groups a set of steps into a named output category.
@@ -248,4 +249,40 @@ func validateOutputs(outputs []*Output, inputs map[string]InputKind) error {
 	}
 
 	return nil
+}
+
+func (Config) JSONSchemaExtend(schema *jsonschema.Schema) {
+	schema.AnyOf = []*jsonschema.Schema{
+		{Required: []string{"geosite"}},
+		{Required: []string{"geoip"}},
+	}
+}
+
+func (Input) JSONSchemaExtend(schema *jsonschema.Schema) {
+	geoOrPlainProps := jsonschema.NewProperties()
+	geoOrPlainProps.Set("kind", &jsonschema.Schema{
+		Enum: []any{"geofile", "plain"},
+	})
+	geoOrPlain := jsonschema.Schema{
+		Properties: geoOrPlainProps,
+	}
+
+	schema.If = &geoOrPlain
+	schema.Then = &jsonschema.Schema{
+		OneOf: []*jsonschema.Schema{
+			{Required: []string{"url"}},
+			{Required: []string{"path"}},
+		},
+	}
+
+	listProps := jsonschema.NewProperties()
+	listProps.Set("kind", &jsonschema.Schema{Const: "list"})
+	schema.Else = &jsonschema.Schema{
+		If: &jsonschema.Schema{
+			Properties: listProps,
+		},
+		Then: &jsonschema.Schema{
+			Required: []string{"list"},
+		},
+	}
 }
