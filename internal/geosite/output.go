@@ -23,9 +23,10 @@ type (
 	}
 
 	OutputStepOptions struct {
-		resetAttributes  bool
-		deleteAttributes []string
-		appendAttributes []string
+		skipAttrsOnDedup bool
+		resetAttrs       bool
+		deleteAttrs      []string
+		appendAttrs      []string
 	}
 
 	OutputStep struct {
@@ -63,9 +64,10 @@ func NewOutput(cfg *config.Output, defaultDir string, inputs map[string]*Input) 
 		for _, s := range c.Steps {
 			options := &OutputStepOptions{}
 			if s.Options != nil {
-				options.resetAttributes = s.Options.ResetAttributes
-				options.deleteAttributes = s.Options.DeleteAttributes
-				options.appendAttributes = s.Options.AppendAttributes
+				options.skipAttrsOnDedup = s.Options.SkipAttrsOnDedup
+				options.resetAttrs = s.Options.ResetAttrs
+				options.deleteAttrs = s.Options.DeleteAttrs
+				options.appendAttrs = s.Options.AppendAttrs
 			}
 
 			steps = append(steps, &OutputStep{
@@ -255,13 +257,12 @@ func (c *OutputCategory) collectDomains() (map[string]*OutputDomain, error) {
 		}
 
 		for _, d := range domains {
-			od := d.toOutputDomain(s.options)
+			od := s.options.newOutputDomain(d)
 
 			switch s.action {
 			case config.StepActionAdd:
 				result[od.plain] = od
 			case config.StepActionDel:
-				// delete if exact match
 				delete(result, od.plain)
 			}
 		}
@@ -270,15 +271,15 @@ func (c *OutputCategory) collectDomains() (map[string]*OutputDomain, error) {
 	return result, nil
 }
 
-func (d *Domain) toOutputDomain(options *OutputStepOptions) *OutputDomain {
-	if options == nil {
+func (o *OutputStepOptions) newOutputDomain(d *Domain) *OutputDomain {
+	if o == nil {
 		return &OutputDomain{
 			domain: d,
-			plain:  plainKey(d),
+			plain:  plainKey(d, false),
 		}
 	}
 
-	attrs := applyAttrOptions(d.GetAttributes(), options)
+	attrs := o.applyAttrOptions(d.GetAttributes())
 
 	nd := &Domain{
 		Type:       d.GetType(),
@@ -288,27 +289,27 @@ func (d *Domain) toOutputDomain(options *OutputStepOptions) *OutputDomain {
 
 	return &OutputDomain{
 		domain: nd,
-		plain:  plainKey(nd),
+		plain:  plainKey(nd, o.skipAttrsOnDedup),
 	}
 }
 
-func applyAttrOptions(attrs []*Domain_Attribute, opts *OutputStepOptions) []*Domain_Attribute {
-	if !opts.resetAttributes && len(opts.deleteAttributes) == 0 && len(opts.appendAttributes) == 0 {
+func (o *OutputStepOptions) applyAttrOptions(attrs []*Domain_Attribute) []*Domain_Attribute {
+	if !o.resetAttrs && len(o.deleteAttrs) == 0 && len(o.appendAttrs) == 0 {
 		return attrs
 	}
 
-	result := make([]*Domain_Attribute, 0, len(attrs)+len(opts.appendAttributes))
+	result := make([]*Domain_Attribute, 0, len(attrs)+len(o.appendAttrs))
 
-	if !opts.resetAttributes {
+	if !o.resetAttrs {
 		for _, a := range attrs {
-			if slices.Contains(opts.deleteAttributes, a.GetKey()) {
+			if slices.Contains(o.deleteAttrs, a.GetKey()) {
 				continue
 			}
 			result = append(result, a)
 		}
 	}
 
-	for _, key := range opts.appendAttributes {
+	for _, key := range o.appendAttrs {
 		result = append(result, &Domain_Attribute{
 			Key:        key,
 			TypedValue: &Domain_Attribute_BoolValue{BoolValue: true},
@@ -318,12 +319,12 @@ func applyAttrOptions(attrs []*Domain_Attribute, opts *OutputStepOptions) []*Dom
 	return result
 }
 
-func plainKey(d *Domain) string {
+func plainKey(d *Domain, skipAttrs bool) string {
 	typ := d.GetType().String()
 	val := d.GetValue()
 	attrs := d.GetAttributes()
 
-	if len(attrs) == 0 {
+	if skipAttrs || len(attrs) == 0 {
 		return typ + ":" + val
 	}
 

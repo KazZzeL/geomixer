@@ -84,13 +84,13 @@ func BenchmarkToOutputDomain(b *testing.B) {
 		},
 	}
 	opts := &OutputStepOptions{
-		deleteAttributes: []string{"ads"},
-		appendAttributes: []string{"newattr"},
+		deleteAttrs: []string{"ads"},
+		appendAttrs: []string{"newattr"},
 	}
 
 	b.ResetTimer()
 	for range b.N {
-		_ = d.toOutputDomain(opts)
+		_ = opts.newOutputDomain(d)
 	}
 }
 
@@ -212,6 +212,6 @@ func BenchmarkPlainKey(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		_ = plainKey(d)
+		_ = plainKey(d, false)
 	}
 }

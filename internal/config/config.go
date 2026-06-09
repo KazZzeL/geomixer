@@ -47,12 +47,13 @@ type (
 
 	// Options defines per-step transformations.
 	Options struct {
-		IgnoreIPv4 bool `json:"ignoreIPv4,omitempty" yaml:"ignoreIPv4" jsonschema:"description=Skip IPv4 CIDRs from geoip input"`
-		IgnoreIPv6 bool `json:"ignoreIPv6,omitempty" yaml:"ignoreIPv6" jsonschema:"description=Skip IPv6 CIDRs from geoip input"`
+		IgnoreIPv4 bool `json:"ignore_ip_v4,omitempty" yaml:"ignore_ip_v4" jsonschema:"description=Drop IPv4 CIDRs from geoip processing"`
+		IgnoreIPv6 bool `json:"ignore_ip_v6,omitempty" yaml:"ignore_ip_v6" jsonschema:"description=Drop IPv6 CIDRs from geoip processing"`
 
-		ResetAttributes  bool     `json:"resetAttributes,omitempty"  yaml:"resetAttributes"  jsonschema:"description=Clear all existing domain attributes before appending"`
-		DeleteAttributes []string `json:"deleteAttributes,omitempty" yaml:"deleteAttributes" jsonschema:"description=Remove specific attributes by key,example=ads"`
-		AppendAttributes []string `json:"appendAttributes,omitempty" yaml:"appendAttributes" jsonschema:"description=Add new boolean attributes,example=tracking"`
+		SkipAttrsOnDedup bool     `json:"skip_attrs_on_dedup,omitempty" yaml:"skip_attrs_on_dedup" jsonschema:"description=When true dedup uses domain without attrs so same domain with different attrs is merged,example=true"`
+		ResetAttrs       bool     `json:"reset_attrs,omitempty"         yaml:"reset_attrs"         jsonschema:"description=Remove all existing domain attributes before applying other options"`
+		DeleteAttrs      []string `json:"delete_attrs,omitempty"        yaml:"delete_attrs"        jsonschema:"description=Drop specific attribute keys from domain,example=ads"`
+		AppendAttrs      []string `json:"append_attrs,omitempty"        yaml:"append_attrs"        jsonschema:"description=Add boolean attributes to domain rules,example=tracking"`
 	}
 
 	// Step is a single transformation: add or remove domains/CIDRs from an input.
@@ -106,16 +107,14 @@ func Parse(path string) (*Config, error) {
 		return nil, fmt.Errorf("config parsing: %w", err)
 	}
 
-	if err := cfg.validate(); err != nil {
+	if err := validate(cfg); err != nil {
 		return nil, fmt.Errorf("config validation: %w", err)
 	}
-
-	// log.Println(*cfg.Geoip.Outputs[0].Categories[0].Steps[0])
 
 	return cfg, nil
 }
 
-func (cfg *Config) validate() error {
+func validate(cfg *Config) error {
 	if cfg.Geosite == nil && cfg.Geoip == nil {
 		return ErrEmptyConfig
 	}

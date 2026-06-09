@@ -30,7 +30,7 @@ func BenchmarkValidate(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		_ = cfg.validate()
+		_ = validate(cfg)
 	}
 }
 
@@ -59,7 +59,7 @@ func BenchmarkValidateLarge(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		_ = cfg.validate()
+		_ = validate(cfg)
 	}
 }
 

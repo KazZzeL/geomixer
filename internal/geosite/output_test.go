@@ -66,12 +66,12 @@ func TestToOutputDomain_NoOptions(t *testing.T) {
 		},
 	}
 	opts := &OutputStepOptions{}
-	od := d.toOutputDomain(opts)
+	od := opts.newOutputDomain(d)
 	assert.Equal(t, "domain:example.com:@ads", od.plain)
 	require.Len(t, od.domain.GetAttributes(), 1)
 }
 
-func TestToOutputDomain_ResetAttributes(t *testing.T) {
+func TestNewOutputDomain_SkipAttrsOnDedup(t *testing.T) {
 	d := &Domain{
 		Type:  Domain_domain,
 		Value: "example.com",
@@ -79,13 +79,64 @@ func TestToOutputDomain_ResetAttributes(t *testing.T) {
 			{Key: "ads", TypedValue: &Domain_Attribute_BoolValue{BoolValue: true}},
 		},
 	}
-	opts := &OutputStepOptions{resetAttributes: true}
-	od := d.toOutputDomain(opts)
+	opts := &OutputStepOptions{skipAttrsOnDedup: true}
+	od := opts.newOutputDomain(d)
+	assert.Equal(t, "domain:example.com", od.plain)
+	assert.Len(t, od.domain.GetAttributes(), 1)
+}
+
+func TestNewOutputDomain_SkipAttrsOnDedupMergesDuplicates(t *testing.T) {
+	input := &Input{
+		name: "in",
+		categories: []*InputCategory{
+			{
+				name: "all",
+				domains: []*Domain{
+					{
+						Type:  Domain_domain,
+						Value: "example.com",
+						Attributes: []*Domain_Attribute{
+							{Key: "ads", TypedValue: &Domain_Attribute_BoolValue{BoolValue: true}},
+						},
+					},
+					{
+						Type:  Domain_domain,
+						Value: "example.com",
+						Attributes: []*Domain_Attribute{
+							{Key: "tracking", TypedValue: &Domain_Attribute_BoolValue{BoolValue: true}},
+						},
+					},
+				},
+			},
+		},
+	}
+	cat := &OutputCategory{
+		name: "test",
+		steps: []*OutputStep{
+			{action: config.StepActionAdd, input: input, options: &OutputStepOptions{skipAttrsOnDedup: true}},
+		},
+	}
+	domains, err := cat.collectDomains()
+	require.NoError(t, err)
+	require.Len(t, domains, 1)
+	assert.Equal(t, "domain:example.com", domains["domain:example.com"].plain)
+}
+
+func TestNewOutputDomain_ResetAttributes(t *testing.T) {
+	d := &Domain{
+		Type:  Domain_domain,
+		Value: "example.com",
+		Attributes: []*Domain_Attribute{
+			{Key: "ads", TypedValue: &Domain_Attribute_BoolValue{BoolValue: true}},
+		},
+	}
+	opts := &OutputStepOptions{resetAttrs: true}
+	od := opts.newOutputDomain(d)
 	assert.Empty(t, od.domain.GetAttributes())
 	assert.Equal(t, "domain:example.com", od.plain)
 }
 
-func TestToOutputDomain_DeleteAttributes(t *testing.T) {
+func TestNewOutputDomain_DeleteAttributes(t *testing.T) {
 	d := &Domain{
 		Type:  Domain_domain,
 		Value: "example.com",
@@ -94,26 +145,26 @@ func TestToOutputDomain_DeleteAttributes(t *testing.T) {
 			{Key: "tracking", TypedValue: &Domain_Attribute_BoolValue{BoolValue: true}},
 		},
 	}
-	opts := &OutputStepOptions{deleteAttributes: []string{"ads"}}
-	od := d.toOutputDomain(opts)
+	opts := &OutputStepOptions{deleteAttrs: []string{"ads"}}
+	od := opts.newOutputDomain(d)
 	require.Len(t, od.domain.GetAttributes(), 1)
 	assert.Equal(t, "tracking", od.domain.GetAttributes()[0].GetKey())
 	assert.Equal(t, "domain:example.com:@tracking", od.plain)
 }
 
-func TestToOutputDomain_AppendAttributes(t *testing.T) {
+func TestNewOutputDomain_AppendAttributes(t *testing.T) {
 	d := &Domain{
 		Type:  Domain_domain,
 		Value: "example.com",
 	}
-	opts := &OutputStepOptions{appendAttributes: []string{"newattr"}}
-	od := d.toOutputDomain(opts)
+	opts := &OutputStepOptions{appendAttrs: []string{"newattr"}}
+	od := opts.newOutputDomain(d)
 	require.Len(t, od.domain.GetAttributes(), 1)
 	assert.Equal(t, "newattr", od.domain.GetAttributes()[0].GetKey())
 	assert.Equal(t, "domain:example.com:@newattr", od.plain)
 }
 
-func TestToOutputDomain_ResetThenAppend(t *testing.T) {
+func TestNewOutputDomain_ResetThenAppend(t *testing.T) {
 	d := &Domain{
 		Type:  Domain_domain,
 		Value: "example.com",
@@ -122,13 +173,32 @@ func TestToOutputDomain_ResetThenAppend(t *testing.T) {
 		},
 	}
 	opts := &OutputStepOptions{
-		resetAttributes:  true,
-		appendAttributes: []string{"newattr"},
+		resetAttrs:  true,
+		appendAttrs: []string{"newattr"},
 	}
-	od := d.toOutputDomain(opts)
+	od := opts.newOutputDomain(d)
 	require.Len(t, od.domain.GetAttributes(), 1)
 	assert.Equal(t, "newattr", od.domain.GetAttributes()[0].GetKey())
 	assert.Equal(t, "domain:example.com:@newattr", od.plain)
+}
+
+func TestNewOutputDomain_ResetThenAppendSkipDedup(t *testing.T) {
+	d := &Domain{
+		Type:  Domain_domain,
+		Value: "example.com",
+		Attributes: []*Domain_Attribute{
+			{Key: "ads", TypedValue: &Domain_Attribute_BoolValue{BoolValue: true}},
+		},
+	}
+	opts := &OutputStepOptions{
+		resetAttrs:       true,
+		appendAttrs:      []string{"newattr"},
+		skipAttrsOnDedup: true,
+	}
+	od := opts.newOutputDomain(d)
+	require.Len(t, od.domain.GetAttributes(), 1)
+	assert.Equal(t, "newattr", od.domain.GetAttributes()[0].GetKey())
+	assert.Equal(t, "domain:example.com", od.plain)
 }
 
 func TestCollectDomains_Add(t *testing.T) {

@@ -45,7 +45,7 @@ func TestValidate_EmptyInputs(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_EmptyOutputs(t *testing.T) {
@@ -57,7 +57,7 @@ func TestValidate_EmptyOutputs(t *testing.T) {
 			Outputs: []*Output{},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_MissingInputName(t *testing.T) {
@@ -74,7 +74,7 @@ func TestValidate_MissingInputName(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_MissingURLAndPath(t *testing.T) {
@@ -91,7 +91,7 @@ func TestValidate_MissingURLAndPath(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_MissingList(t *testing.T) {
@@ -108,7 +108,7 @@ func TestValidate_MissingList(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_UnknownKind(t *testing.T) {
@@ -125,7 +125,7 @@ func TestValidate_UnknownKind(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_UnknownAction(t *testing.T) {
@@ -144,7 +144,7 @@ func TestValidate_UnknownAction(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_MissingStepInput(t *testing.T) {
@@ -163,7 +163,7 @@ func TestValidate_MissingStepInput(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_AmbiguousIncludeExclude(t *testing.T) {
@@ -192,7 +192,7 @@ func TestValidate_AmbiguousIncludeExclude(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_NonGeoIncludeExcludeCleared(t *testing.T) {
@@ -216,7 +216,7 @@ func TestValidate_NonGeoIncludeExcludeCleared(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, cfg.validate())
+	require.NoError(t, validate(cfg))
 }
 
 func TestValidate_DefaultOptions(t *testing.T) {
@@ -233,7 +233,7 @@ func TestValidate_DefaultOptions(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, cfg.validate())
+	require.NoError(t, validate(cfg))
 }
 
 func TestValidate_IgnoredAllIPTypes(t *testing.T) {
@@ -261,7 +261,7 @@ func TestValidate_IgnoredAllIPTypes(t *testing.T) {
 			},
 		},
 	}
-	require.Error(t, cfg.validate())
+	require.Error(t, validate(cfg))
 }
 
 func TestValidate_OutputDir(t *testing.T) {
@@ -278,6 +278,6 @@ func TestValidate_OutputDir(t *testing.T) {
 			},
 		},
 	}
-	require.NoError(t, cfg.validate())
+	require.NoError(t, validate(cfg))
 	assert.Equal(t, "custom-dir", *cfg.Geosite.Outputs[0].Dir)
 }
