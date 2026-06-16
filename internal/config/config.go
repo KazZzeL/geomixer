@@ -223,10 +223,10 @@ func validateOutputs(outputs []*Output, inputs map[string]InputKind) error {
 
 				if kind == InputKindGeo {
 					for i := range step.Include {
-						step.Include[i] = strings.ToLower(step.Include[i])
+						step.Include[i] = strings.ToUpper(step.Include[i])
 					}
 					for i := range step.Exclude {
-						step.Exclude[i] = strings.ToLower(step.Exclude[i])
+						step.Exclude[i] = strings.ToUpper(step.Exclude[i])
 					}
 
 					if len(step.Include) != 0 && len(step.Exclude) != 0 {

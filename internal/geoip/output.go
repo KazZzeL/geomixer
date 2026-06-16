@@ -86,7 +86,7 @@ func NewOutput(cfg *config.Output, defaultDir string, inputs map[string]*Input) 
 		})
 
 		categories = append(categories, &OutputCategory{
-			name:  c.Name,
+			name:  strings.ToUpper(c.Name),
 			steps: steps,
 		})
 	}

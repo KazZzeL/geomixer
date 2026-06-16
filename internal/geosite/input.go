@@ -124,11 +124,9 @@ func (i *Input) Domains(include, exclude []string) ([]*Domain, error) {
 }
 
 func (i *Input) addCategory(name string) *InputCategory {
-	domains := make([]*Domain, 0, defaultDomainsLen)
-
 	c := &InputCategory{
-		name:    name,
-		domains: domains,
+		name:    strings.ToUpper(strings.TrimSpace(name)),
+		domains: make([]*Domain, 0, defaultDomainsLen),
 	}
 
 	i.mu.Lock()
@@ -163,10 +161,7 @@ func (i *Input) parseGeo(ctx context.Context) error {
 
 	for _, category := range geosite.GetCategories() {
 		wg.Go(func() {
-			c := i.addCategory(
-				strings.ToLower(strings.TrimSpace(category.GetName())),
-			)
-
+			c := i.addCategory(category.GetName())
 			c.domains = category.GetDomains()
 		})
 	}

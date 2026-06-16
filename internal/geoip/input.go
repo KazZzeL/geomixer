@@ -54,14 +54,12 @@ const (
 )
 
 var (
-	ErrInputIsNil      = errors.New("input object is nil")
-	ErrInvalidIPType   = errors.New("invalid IP type")
-	ErrInvalidIP       = errors.New("invalid IP address")
-	ErrInvalidIPLength = errors.New("invalid IP address length")
-	// ErrInvalidIPNet      = errors.New("invalid IPNet address").
-	ErrInvalidCIDR   = errors.New("invalid CIDR")
-	ErrInvalidPrefix = errors.New("invalid prefix")
-	// ErrInvalidPrefixType = errors.New("invalid prefix type").
+	ErrInputIsNil        = errors.New("input object is nil")
+	ErrInvalidIPType     = errors.New("invalid IP type")
+	ErrInvalidIP         = errors.New("invalid IP address")
+	ErrInvalidIPLength   = errors.New("invalid IP address length")
+	ErrInvalidCIDR       = errors.New("invalid CIDR")
+	ErrInvalidPrefix     = errors.New("invalid prefix")
 	ErrExtractedNoIPSets = errors.New("extracted 0 ip sets from input")
 	ErrCommentLine       = errors.New("comment line")
 )
@@ -139,7 +137,7 @@ func (i *Input) IPSets(include, exclude []string) ([]*netipx.IPSet, []*netipx.IP
 
 func (i *Input) addCategory(name string) *InputCategory {
 	c := &InputCategory{
-		name:        name,
+		name:        strings.ToUpper(strings.TrimSpace(name)),
 		ipv4Builder: new(netipx.IPSetBuilder),
 		ipv6Builder: new(netipx.IPSetBuilder),
 	}
@@ -176,9 +174,7 @@ func (i *Input) parseGeo(ctx context.Context) error {
 
 	for _, category := range geoip.GetCategories() {
 		eg.Go(func() error {
-			c := i.addCategory(
-				strings.ToLower(strings.TrimSpace(category.GetName())),
-			)
+			c := i.addCategory(category.GetName())
 
 			for _, cidr := range category.GetCidr() {
 				select {
