@@ -51,6 +51,9 @@ const (
 	defaultCategoryName string = "all"
 
 	defaultCategoriesLen int = 128
+
+	ipv4BitsLen int = 32
+	ipv6BitsLen int = 128
 )
 
 var (
@@ -229,7 +232,7 @@ func (i *Input) parseLst(ctx context.Context) error {
 	for ind := range i.list {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return fmt.Errorf("ctx: %w", ctx.Err())
 		default:
 			if err := c.addCIDR(i.list[ind]); err != nil {
 				return fmt.Errorf("add cidr: %w", err)
@@ -306,7 +309,7 @@ func (c *InputCategory) addCIDR(cidr string) error {
 	return nil
 }
 
-func (*InputCategory) parseCIDR(src string) (prefix *netip.Prefix, ipType IPType, err error) {
+func (*InputCategory) parseCIDR(src string) (*netip.Prefix, IPType, error) {
 	src, _, _ = strings.Cut(src, "#")
 	src, _, _ = strings.Cut(src, "//")
 	src, _, _ = strings.Cut(src, "/*")
@@ -316,19 +319,19 @@ func (*InputCategory) parseCIDR(src string) (prefix *netip.Prefix, ipType IPType
 	}
 
 	if strings.Contains(src, "/") {
-		p, err := netip.ParsePrefix(src)
+		prefix, err := netip.ParsePrefix(src)
 		if err != nil {
 			return nil, IPv4, ErrInvalidCIDR
 		}
-		addr := p.Addr().Unmap()
+		addr := prefix.Addr().Unmap()
 		if addr.Is4() && strings.Contains(src, "::") {
 			return nil, IPv4, ErrInvalidCIDR
 		}
 		switch {
 		case addr.Is4():
-			return &p, IPv4, nil
+			return &prefix, IPv4, nil
 		case addr.Is6():
-			return &p, IPv6, nil
+			return &prefix, IPv6, nil
 		default:
 			return nil, IPv4, ErrInvalidIPLength
 		}
@@ -340,10 +343,10 @@ func (*InputCategory) parseCIDR(src string) (prefix *netip.Prefix, ipType IPType
 		ip = ip.Unmap()
 		switch {
 		case ip.Is4():
-			prefix := netip.PrefixFrom(ip, 32)
+			prefix := netip.PrefixFrom(ip, ipv4BitsLen)
 			return &prefix, IPv4, nil
 		case ip.Is6():
-			prefix := netip.PrefixFrom(ip, 128)
+			prefix := netip.PrefixFrom(ip, ipv6BitsLen)
 			return &prefix, IPv6, nil
 		default:
 			return nil, IPv4, ErrInvalidIPLength

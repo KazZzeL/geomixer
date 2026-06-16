@@ -9,6 +9,7 @@ linters:
     - canonicalheader
     - containedctx
     - copyloopvar
+    - cyclop
     - decorder
     - dogsled
     - dupl
@@ -29,11 +30,14 @@ linters:
     - gocheckcompilerdirectives
     - gochecksumtype
     - goconst
+    - gocritic
     - gocyclo
     - godot
     - godox
     - goprintffuncname
+    - gosec
     - gosmopolitan
+    - govet
     - iface
     - inamedparam
     - ineffassign
@@ -42,21 +46,26 @@ linters:
     - loggercheck
     - makezero
     - mirror
+    - mnd
     - musttag
     - nakedret
+    - nestif
     - nilerr
     - nilnesserr
     - nilnil
     - nlreturn
     - noctx
     - nolintlint
+    - nonamedreturns
     - nosprintfhostport
     - perfsprint
     - prealloc
     - predeclared
     - promlinter
     - protogetter
+    - reassign
     - recvcheck
+    - revive
     - rowserrcheck
     - sloglint
     - spancheck
@@ -74,6 +83,7 @@ linters:
     - usetesting
     - wastedassign
     - whitespace
+    - wrapcheck
   settings:
     cyclop:
       max-complexity: 30
@@ -134,7 +144,7 @@ linters:
         - fieldalignment
       settings:
         shadow:
-          strict: true
+          strict: false
     inamedparam:
       skip-single-param: true
     mnd:

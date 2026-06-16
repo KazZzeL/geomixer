@@ -24,7 +24,7 @@ func BenchmarkParseCIDR(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		for _, cidr := range cases {
 			_ = c.addCIDR(cidr)
 		}
@@ -41,7 +41,7 @@ func BenchmarkBuildIPSets(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_ = c.buildIPSets()
 	}
 }
@@ -59,7 +59,7 @@ func BenchmarkInputParseList(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		in := NewInput(cfg, nil, 0)
 		if err := in.Parse(context.Background()); err != nil {
 			b.Fatal(err)
@@ -85,7 +85,7 @@ func BenchmarkIPSets(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_, _, err := in.IPSets([]string{"a"}, []string{"b"})
 		if err != nil {
 			b.Fatal(err)
@@ -108,7 +108,7 @@ func BenchmarkBuildPrefixes(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_, err := cat.buildPrefixes()
 		if err != nil {
 			b.Fatal(err)
@@ -131,7 +131,7 @@ func BenchmarkBuildCIDR(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_, err := cat.buildCIDR()
 		if err != nil {
 			b.Fatal(err)
@@ -167,7 +167,7 @@ func BenchmarkOutputBuildGeoIP(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_, err := o.buildGeoIP(context.Background())
 		if err != nil {
 			b.Fatal(err)

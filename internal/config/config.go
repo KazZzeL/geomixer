@@ -95,7 +95,7 @@ type (
 func Parse(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("config open: %w", err)
+		return nil, fmt.Errorf("open: %w", err)
 	}
 
 	parser := json.Unmarshal
@@ -105,11 +105,11 @@ func Parse(path string) (*Config, error) {
 
 	cfg := &Config{}
 	if err := parser(data, &cfg); err != nil {
-		return nil, fmt.Errorf("config parsing: %w", err)
+		return nil, fmt.Errorf("parsing: %w", err)
 	}
 
 	if err := validate(cfg); err != nil {
-		return nil, fmt.Errorf("config validation: %w", err)
+		return nil, fmt.Errorf("validation: %w", err)
 	}
 
 	return cfg, nil

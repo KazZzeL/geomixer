@@ -43,7 +43,7 @@ func BenchmarkE2EGeoIP(b *testing.B) {
 	hc := &http.Client{Timeout: 10 * time.Second}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		runner := geoip.NewRunner(cfg.Geoip, b.TempDir())
 		if err := runner.Run(context.Background(), hc, 30*time.Second); err != nil {
 			b.Fatal(err)
@@ -80,7 +80,7 @@ func BenchmarkE2EGeoSite(b *testing.B) {
 	hc := &http.Client{Timeout: 10 * time.Second}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		runner := geosite.NewRunner(cfg.Geosite, b.TempDir())
 		if err := runner.Run(context.Background(), hc, 30*time.Second); err != nil {
 			b.Fatal(err)
@@ -138,16 +138,16 @@ func BenchmarkE2ERealV2Fly(b *testing.B) {
 		},
 	}
 
-	hc := httpclient.NewClient("1.3")
+	httpClient := httpclient.NewClient("1.3")
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		r1 := geoip.NewRunner(geoipCfg.Geoip, b.TempDir())
-		if err := r1.Run(context.Background(), hc, 30*time.Second); err != nil {
+		if err := r1.Run(context.Background(), httpClient, 30*time.Second); err != nil {
 			b.Fatal(err)
 		}
 		r2 := geosite.NewRunner(geositeCfg.Geosite, b.TempDir())
-		if err := r2.Run(context.Background(), hc, 30*time.Second); err != nil {
+		if err := r2.Run(context.Background(), httpClient, 30*time.Second); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -203,16 +203,16 @@ func BenchmarkE2ECombined(b *testing.B) {
 		},
 	}
 
-	hc := httpclient.NewClient("1.3")
+	httpClient := httpclient.NewClient("1.3")
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		r1 := geoip.NewRunner(geoipCfg.Geoip, b.TempDir())
-		if err := r1.Run(context.Background(), hc, 30*time.Second); err != nil {
+		if err := r1.Run(context.Background(), httpClient, 30*time.Second); err != nil {
 			b.Fatal(err)
 		}
 		r2 := geosite.NewRunner(geositeCfg.Geosite, b.TempDir())
-		if err := r2.Run(context.Background(), hc, 30*time.Second); err != nil {
+		if err := r2.Run(context.Background(), httpClient, 30*time.Second); err != nil {
 			b.Fatal(err)
 		}
 	}

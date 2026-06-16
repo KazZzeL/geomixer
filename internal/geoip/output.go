@@ -186,6 +186,7 @@ func (c *OutputCategory) buildCIDR() ([]*CIDR, error) {
 
 	cidr := make([]*CIDR, 0, len(prefixes))
 
+	//nolint: gosec // the prefix.Bits() function converts from uint8 to int - there will definitely be no overflow.
 	for _, prefix := range prefixes {
 		cidr = append(cidr, &CIDR{
 			Ip:     prefix.Addr().AsSlice(),

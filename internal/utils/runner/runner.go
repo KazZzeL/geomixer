@@ -66,7 +66,7 @@ func (r *Runner) runParsers(ctx context.Context, hc *http.Client, ht time.Durati
 	for _, cfg := range r.inputs {
 		select {
 		case <-egCtx.Done():
-			return nil, egCtx.Err()
+			return nil, fmt.Errorf("ctx: %w", egCtx.Err())
 		default:
 			eg.Go(func() error {
 				parser := r.newParser(cfg, hc, ht)
@@ -76,7 +76,7 @@ func (r *Runner) runParsers(ctx context.Context, hc *http.Client, ht time.Durati
 				r.mtx.Unlock()
 
 				if err := parser.Parse(egCtx); err != nil {
-					return fmt.Errorf("parse input %s: %w", parser.String(), err)
+					return fmt.Errorf("input %s: %w", parser.String(), err)
 				}
 
 				return nil
@@ -85,7 +85,7 @@ func (r *Runner) runParsers(ctx context.Context, hc *http.Client, ht time.Durati
 	}
 
 	if err := eg.Wait(); err != nil {
-		return nil, fmt.Errorf("parse inputs: %w", err)
+		return nil, fmt.Errorf("parse: %w", err)
 	}
 
 	return parsers, nil
@@ -96,13 +96,13 @@ func (r *Runner) runGenerators(ctx context.Context, parsers map[string]Parser) e
 	for _, cfg := range r.outputs {
 		select {
 		case <-egCtx.Done():
-			return egCtx.Err()
+			return fmt.Errorf("ctx: %w", egCtx.Err())
 		default:
 			eg.Go(func() error {
 				generator := r.newGenerator(cfg, r.outputDir, parsers)
 
 				if err := generator.Generate(egCtx); err != nil {
-					return fmt.Errorf("generate output %s: %w", generator.String(), err)
+					return fmt.Errorf("output %s: %w", generator.String(), err)
 				}
 
 				return nil
@@ -111,7 +111,7 @@ func (r *Runner) runGenerators(ctx context.Context, parsers map[string]Parser) e
 	}
 
 	if err := eg.Wait(); err != nil {
-		return fmt.Errorf("generate outputs: %w", err)
+		return fmt.Errorf("generate: %w", err)
 	}
 
 	return nil

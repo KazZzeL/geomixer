@@ -198,7 +198,7 @@ func (i *Input) parseLst(ctx context.Context) error {
 	for ind := range i.list {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return fmt.Errorf("ctx: %w", ctx.Err())
 		default:
 			if err := c.addPlain(i.list[ind]); err != nil {
 				return fmt.Errorf("add: %w", err)

@@ -20,7 +20,7 @@ func BenchmarkParseDomain(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		for _, p := range cases {
 			_, _ = c.parseDomain(p)
 		}
@@ -40,7 +40,7 @@ func BenchmarkInputParseList(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		in := NewInput(cfg, nil, 0)
 		if err := in.Parse(context.Background()); err != nil {
 			b.Fatal(err)
@@ -66,7 +66,7 @@ func BenchmarkDomains(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_, err := in.Domains([]string{"a"}, []string{"b"})
 		if err != nil {
 			b.Fatal(err)
@@ -89,7 +89,7 @@ func BenchmarkToOutputDomain(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_ = opts.newOutputDomain(d)
 	}
 }
@@ -117,7 +117,7 @@ func BenchmarkCollectDomains(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_, err := cat.collectDomains()
 		if err != nil {
 			b.Fatal(err)
@@ -149,7 +149,7 @@ func BenchmarkBuildDomains(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_, err := cat.buildDomains()
 		if err != nil {
 			b.Fatal(err)
@@ -191,7 +191,7 @@ func BenchmarkBuildGeoSite(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_, err := o.buildGeoSite(context.Background())
 		if err != nil {
 			b.Fatal(err)
@@ -211,7 +211,7 @@ func BenchmarkPlainKey(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_ = plainKey(d, false)
 	}
 }

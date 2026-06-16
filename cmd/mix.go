@@ -16,6 +16,8 @@ import (
 	"github.com/KazZzeL/geomixer/internal/utils/httpclient"
 )
 
+const defaultHTTPTimeout = 15 * time.Second
+
 var (
 	mixOutputDir   string
 	mixGeositeOnly bool
@@ -36,7 +38,7 @@ func init() {
 	mixCmd.Flags().BoolVarP(&mixGeositeOnly, "geosite-only", "s", false, "Generage only geosites")
 	mixCmd.Flags().BoolVarP(&mixGeoipOnly, "geoip-only", "i", false, "Generage only geoips")
 	mixCmd.Flags().StringVar(&mixTLSMin, "min-tls", "1.3", "TLS min version")
-	mixCmd.Flags().DurationVar(&mixHTTPTimeout, "http-timeout", 15*time.Second, "HTTP requests timeout")
+	mixCmd.Flags().DurationVar(&mixHTTPTimeout, "http-timeout", defaultHTTPTimeout, "HTTP requests timeout")
 
 	// Отмечаем конфликтующие флаги
 	mixCmd.MarkFlagsMutuallyExclusive("geosite-only", "geoip-only")
@@ -49,19 +51,19 @@ func runMix(_ *cobra.Command, args []string) error {
 
 	cfg, err := config.Parse(configFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("config: %w", err)
 	}
 
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	hc := httpclient.NewClient(mixTLSMin)
+	httpClient := httpclient.NewClient(mixTLSMin)
 
-	eg, egCtx := errgroup.WithContext(ctx)
+	errG, egCtx := errgroup.WithContext(ctx)
 
 	if !mixGeoipOnly {
-		eg.Go(func() error {
-			if err := geosite.NewRunner(cfg.Geosite, mixOutputDir).Run(egCtx, hc, mixHTTPTimeout); err != nil {
+		errG.Go(func() error {
+			if err := geosite.NewRunner(cfg.Geosite, mixOutputDir).Run(egCtx, httpClient, mixHTTPTimeout); err != nil {
 				return fmt.Errorf("geosite: %w", err)
 			}
 
@@ -70,8 +72,8 @@ func runMix(_ *cobra.Command, args []string) error {
 	}
 
 	if !mixGeositeOnly {
-		eg.Go(func() error {
-			if err := geoip.NewRunner(cfg.Geoip, mixOutputDir).Run(egCtx, hc, mixHTTPTimeout); err != nil {
+		errG.Go(func() error {
+			if err := geoip.NewRunner(cfg.Geoip, mixOutputDir).Run(egCtx, httpClient, mixHTTPTimeout); err != nil {
 				return fmt.Errorf("geoip: %w", err)
 			}
 
@@ -79,8 +81,8 @@ func runMix(_ *cobra.Command, args []string) error {
 		})
 	}
 
-	if err := eg.Wait(); err != nil {
-		return err
+	if err := errG.Wait(); err != nil {
+		return fmt.Errorf("runner: %w", err)
 	}
 
 	return nil

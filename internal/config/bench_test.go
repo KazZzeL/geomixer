@@ -29,7 +29,7 @@ func BenchmarkValidate(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_ = validate(cfg)
 	}
 }
@@ -58,14 +58,14 @@ func BenchmarkValidateLarge(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		_ = validate(cfg)
 	}
 }
 
 func BenchmarkParse(b *testing.B) {
 	b.ReportAllocs()
-	for range b.N {
+	for b.Loop() {
 		_, err := Parse("testdata/valid.json")
 		if err != nil {
 			b.Fatal(err)
