@@ -11,6 +11,18 @@ import (
 	"github.com/KazZzeL/geomixer/internal/config"
 )
 
+func TestInput_addCategory_UpperCase(t *testing.T) {
+	i := &Input{name: "test"}
+	c := i.addCategory("lowercase")
+	assert.Equal(t, "LOWERCASE", c.name)
+}
+
+func TestInput_addCategory_TrimSpace(t *testing.T) {
+	i := &Input{name: "test"}
+	c := i.addCategory("  spaced  ")
+	assert.Equal(t, "SPACED", c.name)
+}
+
 func TestInput_Domains_NilInput(t *testing.T) {
 	var i *Input
 	_, err := i.Domains(nil, nil)
@@ -81,7 +93,7 @@ func TestNewInput_Parse_ListKind(t *testing.T) {
 	i := NewInput(cfg, nil, time.Second)
 	require.NoError(t, i.Parse(context.Background()))
 	require.Len(t, i.categories, 1)
-	assert.Equal(t, "all", i.categories[0].name)
+	assert.Equal(t, "ALL", i.categories[0].name)
 	require.Len(t, i.categories[0].domains, 4)
 }
 

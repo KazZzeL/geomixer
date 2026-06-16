@@ -11,6 +11,23 @@ import (
 	"github.com/KazZzeL/geomixer/internal/config"
 )
 
+func TestNewOutput_CategoryNameUpperCase(t *testing.T) {
+	dir := "custom"
+	cfg := &config.Output{
+		Name: "geosite.dat",
+		Dir:  &dir,
+		Categories: []*config.Category{
+			{Name: "lowercase", Steps: []*config.Step{
+				{Action: config.StepActionAdd, Input: "in", Options: &config.Options{}},
+			}},
+		},
+	}
+	inputs := map[string]*Input{"in": {name: "in", categories: []*InputCategory{}}}
+	o := NewOutput(cfg, "default", inputs)
+	require.Len(t, o.categories, 1)
+	assert.Equal(t, "LOWERCASE", o.categories[0].name)
+}
+
 func TestNewOutput_WithDir(t *testing.T) {
 	dir := "custom"
 	cfg := &config.Output{

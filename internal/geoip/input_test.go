@@ -27,6 +27,18 @@ func TestInput_IPSets_NoCategories(t *testing.T) {
 	assert.Contains(t, err.Error(), "extracted 0 ip sets")
 }
 
+func TestInput_addCategory_UpperCase(t *testing.T) {
+	i := &Input{name: "test"}
+	c := i.addCategory("lowercase")
+	assert.Equal(t, "LOWERCASE", c.name)
+}
+
+func TestInput_addCategory_TrimSpace(t *testing.T) {
+	i := &Input{name: "test"}
+	c := i.addCategory("  spaced  ")
+	assert.Equal(t, "SPACED", c.name)
+}
+
 func TestInput_addCIDR_IPv4(t *testing.T) {
 	c := &InputCategory{
 		ipv4Builder: new(netipx.IPSetBuilder),
@@ -141,7 +153,7 @@ func TestNewInput_Parse_ListKind(t *testing.T) {
 	i := NewInput(cfg, nil, time.Second)
 	require.NoError(t, i.Parse(context.Background()))
 	require.Len(t, i.categories, 1)
-	assert.Equal(t, "all", i.categories[0].name)
+	assert.Equal(t, "ALL", i.categories[0].name)
 }
 
 func TestNewInput_Parse_ListKind_WithComments(t *testing.T) {
@@ -177,7 +189,7 @@ func TestNewInput_IPSets_FilterExclude(t *testing.T) {
 	}
 	i := NewInput(cfg, nil, time.Second)
 	require.NoError(t, i.Parse(context.Background()))
-	_, _, err := i.IPSets(nil, []string{"all"})
+	_, _, err := i.IPSets(nil, []string{"ALL"})
 	require.Error(t, err)
 	assert.Equal(t, "extracted 0 ip sets from input: test", err.Error())
 }
