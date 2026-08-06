@@ -59,7 +59,7 @@ jobs:
           install-mode: binary
           args: --fix=false
 
-  test:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
@@ -81,5 +81,90 @@ jobs:
           go generate ./...
           git diff --exit-code -- jsonschema/
 
+  vulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f # v1.1.0
+        with:
+          repo-checkout: true
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+          go-package: ./...
+          output-format: text
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      pull-requests: write
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Download gotestsum binary
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
+        with:
+          repo: gotestyourself/gotestsum
+          tag: latest
+          prerelease: false
+          chmod: 0755
+          cache: true
+
       - name: Run tests
-        run: go test -v -count=1 -race ./...
+        run: |
+          gotestsum \
+            --format testname \
+            --junitfile test-report.xml \
+            -- -cover \
+              -coverprofile=coverage.txt \
+              -count=1 \
+              -race \
+              ./...
+
+      - name: Publish tests report
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6.4.2
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        with:
+          report_paths: test-report.xml
+          check_name: Go Tests
+          detailed_summary: true
+          skip_annotations: false
+          fail_on_parse_error: true
+          require_tests: true
+          comment: true
+
+      - name: Upload coverage results
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: code-coverage
+          path: coverage.txt
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: true
+
+      - name: Publish coverage report
+        id: coverage
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: fgrosse/go-coverage-report@ae818fbdd0dd79fe6ddc82e1eb0db466bfb0eddd # v1.3.1
+        with:
+          coverage-artifact-name: code-coverage
+          coverage-file-name: coverage.txt
+          root-package: github.com/KazZzeL/geomixer
+          trim: github.com/KazZzeL/geomixer
+          skip-comment: false
+
+      - name: Check coverage trend
+        if: ${{ !cancelled() && steps.coverage.outputs.coverage_trend == 'decreased' }}
+        run: echo "Coverage decreased!" && exit 1
