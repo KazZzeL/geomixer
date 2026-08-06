@@ -145,12 +145,13 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=4096"
         with:
           report_paths: test-report.xml
-          check_name: Go Tests
+          check_name: test summary
           detailed_summary: true
           skip_annotations: false
           fail_on_parse_error: true
           require_tests: true
           comment: true
+          updateComment: true
 
       - name: Upload coverage results
         if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master') }}
