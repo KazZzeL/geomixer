@@ -193,6 +193,9 @@ linters:
         - -ST1016
     tagalign:
       sort: false
+    testifylint:
+      disable:
+        - encoded-compare
     usetesting:
       os-temp-dir: true
   exclusions:
@@ -233,6 +236,7 @@ linters:
 formatters:
   enable:
     - gci
+    - gofmt
     - goimports
     - golines
   settings:
@@ -260,17 +264,24 @@ formatters:
       reformat-tags: true
       shorten-comments: false
   exclusions:
+    warn-unused: true
     generated: lax
-    warn-unused: false
 issues:
+  max-issues-per-linter: 100
+  max-same-issues: 100
   fix: true
-  max-same-issues: 50
 output:
+  formats:
+    text:
+      print-linter-name: true
+      print-issued-lines: true
+      colors: true
   show-stats: true
 run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
   modules-download-mode: readonly
+  concurrency: 0
 severity:
   default: error

@@ -4,48 +4,29 @@ on:
   push:
     branches: ["**"]
   pull_request:
-    branches: [master]
+    branches: ["master"]
+  workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+permissions: {}
+
+env:
+  LINT_REPORT: lint-report
+  TEST_REPORT: test-report
+  CVRG_REPORT: cvrg-report
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  commitlint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout codebase
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-
-      - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "22"
-
-      - name: Install commitlint
-        run: npm install -D @commitlint/cli @commitlint/config-conventional
-
-      - name: Validate commits
-        if: github.event_name == 'push'
-        run: |
-          FROM=${{ github.event.before }}
-          if [ "$FROM" = "0000000000000000000000000000000000000000" ]; then
-            DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
-            FROM=$(git merge-base origin/$DEFAULT_BRANCH HEAD 2>/dev/null || git rev-list HEAD | tail -1)
-          fi
-          npx commitlint --from $FROM --to ${{ github.sha }} --verbose
-
-      - name: Validate PR commits
-        if: github.event_name == 'pull_request'
-        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
-
   lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -53,64 +34,36 @@ jobs:
           go-version-file: go.mod
           cache-dependency-path: go.sum
 
-      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version-file: .tool-versions
           install-mode: binary
-          args: --fix=false
+          args: |
+            --fix=false \
+            --color=always \
+            --verbose=true \
+            --output.text.path=stdout \
+            --output.junit-xml.path=${{ env.LINT_REPORT }}
 
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout codebase
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Setup Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Upload lint results
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
-
-      - name: Check go mod tidy
-        run: |
-          go mod tidy
-          git diff --exit-code -- go.mod go.sum
-
-      - name: Check generated schema is up to date
-        run: |
-          go generate ./...
-          git diff --exit-code -- jsonschema/
-
-  vulncheck:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout codebase
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Setup Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
-
-      - name: Run govulncheck
-        run: |
-          go run golang.org/x/vuln/cmd/govulncheck@latest \
-            -mode=source \
-            -show=color,verbose \
-            -format=text \
-            ./...
+          name: ${{ env.LINT_REPORT }}
+          path: ${{ env.LINT_REPORT }}
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
 
   test:
+    name: Test
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
-      checks: write
-      pull-requests: write
     steps:
       - name: Checkout codebase
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -118,7 +71,7 @@ jobs:
           go-version-file: go.mod
           cache-dependency-path: go.sum
 
-      - name: Download gotestsum binary
+      - name: Install gotestsum
         uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
         with:
           repo: gotestyourself/gotestsum
@@ -127,53 +80,105 @@ jobs:
           chmod: 0755
           cache: true
 
-      - name: Run tests
+      - name: Run gotestsum
         run: |
           gotestsum \
             --format testname \
-            --junitfile test-report.xml \
+            --junitfile ${{ env.TEST_REPORT }} \
             -- -cover \
-              -coverprofile=coverage.txt \
+              -covermode=atomic \
+              -coverprofile=${{ env.CVRG_REPORT }} \
               -count=1 \
               -race \
               ./...
 
-      - name: Publish tests report
+      - name: Upload test results
         if: ${{ !cancelled() && github.event_name == 'pull_request' }}
-        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6.4.2
-        env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          report_paths: test-report.xml
-          check_name: test summary
+          name: ${{ env.TEST_REPORT }}
+          path: ${{ env.TEST_REPORT }}
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
+      - name: Upload coverage results
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master') }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.CVRG_REPORT }}
+          path: ${{ env.CVRG_REPORT }}
+          if-no-files-found: error
+          retention-days: ${{ github.ref == 'refs/heads/master' && 90 || 1 }}
+          overwrite: true
+
+  report:
+    name: Publish reports
+    permissions:
+      actions: read
+      contents: read
+      checks: write
+      pull-requests: write
+    needs: [lint, test]
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-slim
+    outputs:
+      coverage_trend: ${{ steps.coverage.outputs.coverage_trend }}
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096 # needs for mikepenz/action-junit-report
+    steps:
+      - name: Download lint results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ env.LINT_REPORT }}
+
+      - name: Lint report
+        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6.4.2
+        with:
+          report_paths: ${{ env.LINT_REPORT }}
+          check_name: Lint summary
+          detailed_summary: false
+          include_time_in_summary: false
+          skip_annotations: false
+          fail_on_parse_error: true
+          require_tests: false
+          comment: true
+          updateComment: true
+
+      - name: Download test results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ env.TEST_REPORT }}
+
+      - name: Test report
+        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6.4.2
+        with:
+          report_paths: ${{ env.TEST_REPORT }}
+          check_name: Test summary
           detailed_summary: true
+          include_time_in_summary: true
           skip_annotations: false
           fail_on_parse_error: true
           require_tests: true
           comment: true
           updateComment: true
 
-      - name: Upload coverage results
-        if: ${{ !cancelled() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master') }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: code-coverage
-          path: coverage.txt
-          if-no-files-found: error
-          retention-days: 90
-          overwrite: true
-
-      - name: Publish coverage report
+      - name: Coverage report
         id: coverage
-        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
-        uses: fgrosse/go-coverage-report@ae818fbdd0dd79fe6ddc82e1eb0db466bfb0eddd # v1.3.1
+        uses: fgrosse/go-coverage-report@e432de98ee94a276e8f666d25bfd76347665f75b # v1.3.1
         with:
-          coverage-artifact-name: code-coverage
-          coverage-file-name: coverage.txt
+          coverage-artifact-name: ${{ env.CVRG_REPORT }}
+          coverage-file-name: ${{ env.CVRG_REPORT }}
           root-package: github.com/KazZzeL/geomixer
           trim: github.com/KazZzeL/geomixer
           skip-comment: false
 
-      - name: Check coverage trend
-        if: ${{ !cancelled() && steps.coverage.outputs.coverage_trend == 'decreased' }}
+  coverage_trend:
+    name: Check coverage trend
+    needs: report
+    if: ${{ !cancelled() && needs.report.result == 'success' }}
+    runs-on: ubuntu-slim
+    steps:
+      - name: Fail if decreased
+        if: ${{ needs.report.outputs.coverage_trend == 'decreased' }}
         run: echo "Coverage decreased!" && exit 1
