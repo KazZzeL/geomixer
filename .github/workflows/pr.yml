@@ -20,6 +20,8 @@ concurrency:
 jobs:
   commits_naming:
     name: Сheck commits naming
+    permissions:
+      contents: read # for actions/checkout
     runs-on: ubuntu-slim
     steps:
       - name: Checkout codebase
@@ -49,6 +51,8 @@ jobs:
 
   code_cleanliness:
     name: Сheck code cleanliness
+    permissions:
+      contents: read # for actions/checkout
     runs-on: ubuntu-slim
     steps:
       - name: Checkout codebase
@@ -72,6 +76,8 @@ jobs:
 
   code_vulncheck:
     name: Check code vulnerabilities
+    permissions:
+      contents: read # for actions/checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
@@ -86,8 +92,10 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Run govulncheck
+        env: 
+          GOVULNCHECK_VER: ${{ vars.GOVULNCHECK_VER || 'v1.1.4' }}
         run: |
-          go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 \
+          go run golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VER} \
             -mode=source \
             -show=color,verbose \
             -format=text \
@@ -95,6 +103,8 @@ jobs:
 
   workflows_vulncheck:
     name: Check workflows vulnerabilities
+    permissions:
+      contents: read # for actions/checkout
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
