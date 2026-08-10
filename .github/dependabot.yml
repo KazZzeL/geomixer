@@ -4,10 +4,22 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "saturday"
+      time: "09:00" # UTC
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
+    groups:
+      github-actions:
+        patterns:
+          - "*"  # Group all updates into a single larger pull request.
 
   - package-ecosystem: "gomod"
-    directory: /
+    directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "saturday"
+      time: "09:00" # UTC
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
