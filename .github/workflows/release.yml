@@ -5,13 +5,22 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: write
-  id-token: write
-  attestations: write
+permissions: {}
+
+env: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+  queue: single
 
 jobs:
   release:
+    name: Release
+    permissions:
+      contents: write # for goreleaser/goreleaser-action
+      id-token: write # for actions/attest
+      attestations: write # for actions/attest
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase

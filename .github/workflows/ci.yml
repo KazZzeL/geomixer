@@ -18,6 +18,11 @@ defaults:
   run:
     shell: bash
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+  queue: single
+
 jobs:
   lint:
     name: Lint
@@ -84,10 +89,10 @@ jobs:
         run: |
           gotestsum \
             --format testname \
-            --junitfile ${{ env.TEST_REPORT }} \
+            --junitfile "$TEST_REPORT" \
             -- -cover \
               -covermode=atomic \
-              -coverprofile=${{ env.CVRG_REPORT }} \
+              -coverprofile="$CVRG_REPORT" \
               -count=1 \
               -race \
               ./...
@@ -115,10 +120,10 @@ jobs:
   report:
     name: Publish reports
     permissions:
-      actions: read
-      contents: read
-      checks: write
-      pull-requests: write
+      actions: read # for fgrosse/go-coverage-report
+      contents: read # for fgrosse/go-coverage-report
+      checks: write # for mikepenz/action-junit-report
+      pull-requests: write # for mikepenz/action-junit-report
     needs: [lint, test]
     if: ${{ !cancelled() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-slim
