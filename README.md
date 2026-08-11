@@ -203,6 +203,16 @@ chore: bump goreleaser to v2
 | Push / PR | `ci.yml` | commitlint → golangci-lint → `go test -race` → schema freshness check |
 | Tag `v*` | `release.yml` | Test → goreleaser (generate, build, archive, changelog) |
 
-## License
+## Badges
 
-MIT
+[![Release version](https://img.shields.io/github/release/KazZzeL/geomixer.svg?style=for-the-badge)](https://github.com/KazZzeL/geomixer/releases/latest)
+[![CI status](https://img.shields.io/github/actions/workflow/status/KazZzeL/geomixer/ci.yml?label=CI&style=for-the-badge&branch=master)](https://github.com/KazZzeL/geomixer/actions?workflow=CI)
+[![Build status](https://img.shields.io/github/actions/workflow/status/KazZzeL/geomixer/release.yml?lable=BUILD&style=for-the-badge)](https://github.com/KazZzeL/geomixer/actions?workflow=Release)
+[![Software License](https://img.shields.io/github/license/KazZzeL/geomixer.svg?style=for-the-badge)](/LICENSE)
+[![Powered by: Gotestsum](https://img.shields.io/badge/powered%20by-gotestsum-green.svg?style=for-the-badge)](https://pkg.go.dev/gotest.tools/gotestsum/)
+[![Powered by: Golangci-lint](https://img.shields.io/badge/powered%20by-golangci--lint-green.svg?style=for-the-badge)](https://golangci-lint.run/)
+[![Powered by: GoReleaser](https://img.shields.io/badge/powered%20by-goreleaser-green.svg?style=for-the-badge)](https://goreleaser.com/)
+[![Protected by: Govulncheck](https://img.shields.io/badge/Code%20protected%20by-govulncheck-blue.svg?style=for-the-badge)](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck/)
+[![Protected by: Zizmor](https://img.shields.io/badge/CI%20protected%20by-zizmor-blue.svg?style=for-the-badge)](https://zizmor.sh/)
+[![Protected by: Gitleaks](https://img.shields.io/badge/Secrets%20protected%20by-gitleaks-blue.svg?style=for-the-badge)](https://gitleaks.io/)
+[![Uses: Conventional Commits](https://img.shields.io/badge/Uses%20Conventional%20Commits-1.0.0-yellow.svg?style=for-the-badge)](https://conventionalcommits.org/)
