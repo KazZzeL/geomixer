@@ -34,6 +34,8 @@ var mixCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.AddCommand(mixCmd)
+
 	mixCmd.Flags().StringVarP(&mixOutputDir, "output", "o", "./output", "Generated geofiles dir (default: ./output)")
 	mixCmd.Flags().BoolVarP(&mixGeositeOnly, "geosite-only", "s", false, "Generage only geosites")
 	mixCmd.Flags().BoolVarP(&mixGeoipOnly, "geoip-only", "i", false, "Generage only geoips")
@@ -45,7 +47,8 @@ func init() {
 }
 
 func runMix(_ *cobra.Command, args []string) error {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	configFile := args[0]
 
@@ -53,9 +56,6 @@ func runMix(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("config: %w", err)
 	}
-
-	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	httpClient := httpclient.NewClient(mixTLSMin)
 
