@@ -14,9 +14,6 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.AddCommand(mixCmd)
-	rootCmd.AddCommand(schemaCmd)
-
 	if err := rootCmd.Execute(); err != nil {
 		_, _ = fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(-1)

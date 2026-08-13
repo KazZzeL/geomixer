@@ -23,6 +23,8 @@ var schemaCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.AddCommand(schemaCmd)
+
 	schemaCmd.Flags().
 		StringVarP(&schemaOutputDir, "output", "o", "./jsonschema", "Generated schema dir (default: ./jsonschema)")
 	schemaCmd.Flags().

@@ -1,7 +1,6 @@
 package geoip
 
 import (
-	"context"
 	"testing"
 
 	"go4.org/netipx"
@@ -58,10 +57,12 @@ func BenchmarkInputParseList(b *testing.B) {
 		List: lines,
 	}
 
+	ctx := b.Context()
+
 	b.ResetTimer()
 	for b.Loop() {
 		in := NewInput(cfg, nil, 0)
-		if err := in.Parse(context.Background()); err != nil {
+		if err := in.Parse(ctx); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -147,6 +148,7 @@ func BenchmarkOutputBuildGeoIP(b *testing.B) {
 			{name: "cn", ipv4Set: mustParseIPSet("192.168.0.0/16")},
 		},
 	}
+
 	o := &Output{
 		name: "bench.dat",
 		categories: []*OutputCategory{
@@ -166,9 +168,11 @@ func BenchmarkOutputBuildGeoIP(b *testing.B) {
 		},
 	}
 
+	ctx := b.Context()
+
 	b.ResetTimer()
 	for b.Loop() {
-		_, err := o.buildGeoIP(context.Background())
+		_, err := o.buildGeoIP(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}
