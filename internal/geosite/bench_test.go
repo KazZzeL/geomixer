@@ -1,7 +1,6 @@
 package geosite
 
 import (
-	"context"
 	"testing"
 
 	"github.com/KazZzeL/geomixer/internal/config"
@@ -39,10 +38,12 @@ func BenchmarkInputParseList(b *testing.B) {
 		List: lines,
 	}
 
+	ctx := b.Context()
+
 	b.ResetTimer()
 	for b.Loop() {
 		in := NewInput(cfg, nil, 0)
-		if err := in.Parse(context.Background()); err != nil {
+		if err := in.Parse(ctx); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -190,9 +191,11 @@ func BenchmarkBuildGeoSite(b *testing.B) {
 		},
 	}
 
+	ctx := b.Context()
+
 	b.ResetTimer()
 	for b.Loop() {
-		_, err := o.buildGeoSite(context.Background())
+		_, err := o.buildGeoSite(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}
