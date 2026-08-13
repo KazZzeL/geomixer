@@ -40,6 +40,9 @@ const (
 
 	defaultCategoriesLen int = 128
 	defaultDomainsLen    int = 1024
+
+	maxDomainLen int = 253
+	maxLabelLen  int = 63
 )
 
 var (
@@ -48,6 +51,7 @@ var (
 	ErrUnknownRuleType    = errors.New("unknown rule type")
 	ErrEmptyRule          = errors.New("empty rule")
 	ErrInvalidDomain      = errors.New("invalid domain")
+	ErrInvalidKeyword     = errors.New("invalid keyword")
 	ErrInvalidDotless     = errors.New("substr in dotless rule should not contain a dot")
 	ErrInvalidAttribute   = errors.New("invalid attribute")
 	ErrExtractedNoDomains = errors.New("extracted 0 domains from input")
@@ -274,10 +278,18 @@ func (c *InputCategory) parseDomain(rule string) (*Domain, error) {
 		}
 
 		domain.Value = parts[0]
-	case Domain_substr, Domain_domain, Domain_full:
+	case Domain_substr:
 		value := strings.ToLower(parts[0])
 
 		if !validateDomainChars(value) {
+			return nil, fmt.Errorf("%w: %s", ErrInvalidKeyword, parts[0])
+		}
+
+		domain.Value = value
+	case Domain_domain, Domain_full:
+		value := strings.ToLower(parts[0])
+
+		if !validateDomainName(value) {
 			return nil, fmt.Errorf("%w: %s", ErrInvalidDomain, parts[0])
 		}
 
@@ -301,10 +313,25 @@ func (c *InputCategory) parseDomain(rule string) (*Domain, error) {
 	return domain, nil
 }
 
+func validateDomainName(domain string) bool {
+	if !validateDomainChars(domain) || len(domain) > maxDomainLen {
+		return false
+	}
+
+	for label := range strings.SplitSeq(domain, ".") {
+		if label == "" || len(label) > maxLabelLen || label[0] == '-' || label[len(label)-1] == '-' {
+			return false
+		}
+	}
+
+	return true
+}
+
 func validateDomainChars(domain string) bool {
 	if domain == "" {
 		return false
 	}
+
 	for i := range domain {
 		c := domain[i]
 		if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '-' {

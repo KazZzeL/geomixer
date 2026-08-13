@@ -242,6 +242,156 @@ func TestParseDomain_CommentOnly(t *testing.T) {
 	require.ErrorIs(t, err, ErrCommentLine)
 }
 
+func TestParseDomain_Keyword_Invalid(t *testing.T) {
+	tests := []struct {
+		name string
+		rule string
+	}{
+		{"at", "keyword:test@domain"},
+		{"underscore", "keyword:domain_with_underscore"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &InputCategory{}
+
+			_, err := c.parseDomain(tt.rule)
+
+			require.ErrorIs(t, err, ErrInvalidKeyword)
+		})
+	}
+}
+
+func TestParseDomain_Domain_Invalid(t *testing.T) {
+	tests := []struct {
+		name string
+		rule string
+	}{
+		{"leading hyphen label", "domain:-example.com"},
+		{"trailing hyphen label", "domain:example-.com"},
+		{"empty label", "domain:example..com"},
+		{"leading dot", "domain:.example.com"},
+		{"trailing dot", "domain:example.com."},
+		{"label too long", "domain:" + strings.Repeat("a", maxLabelLen+1) + ".com"},
+		{
+			"domain too long",
+			"domain:" + strings.Repeat(
+				"a",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"b",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"c",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"d",
+				maxLabelLen,
+			),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &InputCategory{}
+
+			_, err := c.parseDomain(tt.rule)
+
+			require.ErrorIs(t, err, ErrInvalidDomain)
+		})
+	}
+}
+
+func TestParseDomain_Full_Invalid(t *testing.T) {
+	tests := []struct {
+		name string
+		rule string
+	}{
+		{"leading hyphen label", "full:-example.com"},
+		{"trailing hyphen label", "full:example-.com"},
+		{"empty label", "full:example..com"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &InputCategory{}
+
+			_, err := c.parseDomain(tt.rule)
+
+			require.ErrorIs(t, err, ErrInvalidDomain)
+		})
+	}
+}
+
+func TestParseDomain_Keyword_WithDotAllowed(t *testing.T) {
+	c := &InputCategory{}
+
+	d, err := c.parseDomain("keyword:example.com")
+
+	require.NoError(t, err)
+	assert.Equal(t, "example.com", d.GetValue())
+}
+
+func TestValidateDomainName(t *testing.T) {
+	tests := []struct {
+		input string
+		valid bool
+	}{
+		{"example.com", true},
+		{"test-domain.co.uk", true},
+		{"a.b.c", true},
+		{"xn--bcher-kva.example", true},
+		{strings.Repeat("a", maxLabelLen) + ".com", true},
+		{
+			strings.Repeat(
+				"a",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"b",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"c",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"d",
+				maxLabelLen-2,
+			),
+			true,
+		},
+		{"", false},
+		{"example..com", false},
+		{".example.com", false},
+		{"example.com.", false},
+		{"-example.com", false},
+		{"example-.com", false},
+		{"UPPERCASE", false},
+		{"test@domain", false},
+		{"domain_with_underscore", false},
+		{strings.Repeat("a", maxLabelLen+1) + ".com", false},
+		{
+			strings.Repeat(
+				"a",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"b",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"c",
+				maxLabelLen,
+			) + "." + strings.Repeat(
+				"d",
+				maxLabelLen,
+			),
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		got := validateDomainName(tt.input)
+		assert.Equal(t, tt.valid, got, "validateDomainName(%q)", tt.input)
+	}
+}
+
 func TestValidateDomainChars(t *testing.T) {
 	tests := []struct {
 		input string
