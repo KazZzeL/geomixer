@@ -4,14 +4,26 @@ version: 2
 
 project_name: geomixer
 
+report_sizes: true
+
+before:
+  hooks:
+    - go mod tidy
+
+metadata:
+  mod_timestamp: "{{ .CommitTimestamp }}"
+
 builds:
   - id: geomixer
     main: .
     binary: geomixer
+    flags:
+      - -trimpath
     ldflags:
       - -s -w -extldflags "-static"
     env:
       - CGO_ENABLED=0
+    mod_timestamp: "{{ .CommitTimestamp }}"
     goos:
       - darwin
       - linux
@@ -19,10 +31,6 @@ builds:
     goarch:
       - arm64
       - amd64
-
-sboms:
-  - id: archive
-    artifacts: archive
 
 archives:
   - formats: [ 'tar.gz' ]
@@ -35,6 +43,10 @@ archives:
       - LICENSE
       - README.md
 
+source:
+  enabled: true
+  name_template: '{{ .ProjectName }}-{{ .Version }}-source'
+
 snapshot:
   version_template: SNAPSHOT-{{ .Commit }}
 
@@ -46,6 +58,10 @@ checksum:
 
 docker_digest:
   disable: true
+
+sboms:
+  - id: archive
+    artifacts: archive
 
 changelog:
   disable: false
@@ -81,20 +97,35 @@ changelog:
       - Merge branch
       - go mod tidy
 
+dockers_v2:
+  - id: geomixer
+    disable: true
+
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sigstore.json"
+    output: true
+    artifacts: checksum
+    args:
+      - sign-blob
+      - "--bundle=${signature}"
+      - "${artifact}"
+      - --yes
+
+# docker_signs:
+#   - cmd: cosign
+#     artifacts: manifests
+#     output: true
+#     args:
+#       - "sign"
+#       - "${artifact}@${digest}"
+#       - --yes
+
 release:
   disable: false
+  draft: false
+  skip_upload: false
   name_template: "v{{ .Version }}"
   mode: replace
-
   header: |
     ## {{.ProjectName}} {{.Version}} ({{.Date}})
-
-  footer: >-
-
-    ---
-
-    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
-
-source:
-  enabled: true
-  name_template: '{{ .ProjectName }}-{{ .Version }}-source'
