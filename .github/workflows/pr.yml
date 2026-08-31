@@ -2,7 +2,8 @@ name: PR
 
 on:
   pull_request:
-    branches: ["master"]
+    branches: 
+      - master
 
 permissions: {}
 
@@ -18,12 +19,17 @@ concurrency:
   queue: single
 
 jobs:
-  commits_naming:
-    name: Сheck commits naming
+  commits_check:
+    name: Сheck commits
     permissions:
       contents: read # for actions/checkout
+      pull-requests: write # for 1Password/check-signed-commits-action
+    if: ${{ !cancelled() && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-slim
     steps:
+      - name: Check commits are signed
+        uses: 1Password/check-signed-commits-action@ed2885f3ed2577a4f5d3c3fe895432a557d23d52 # v1.2.0
+
       - name: Checkout codebase
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,17 +38,21 @@ jobs:
 
       - name: Setup node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        env:
+          COMMITLINT_NODE_VER: ${{ vars.COMMITLINT_NODE_VER || '24' }}
         with:
-          node-version: "24"
+          node-version: ${{ env.COMMITLINT_NODE_VER }}
 
       - name: Run commitlint
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          COMMITLINT_CLI_VER: ${{ vars.COMMITLINT_CLI_VER || '21.2.2' }}
+          COMMITLINT_CFG_VER: ${{ vars.COMMITLINT_CFG_VER || '21.2.2' }}
         run: |
           npx --yes \
-            -p @commitlint/cli@21.2.1 \
-            -p @commitlint/config-conventional@21.2.0 \
+            -p @commitlint/cli@${COMMITLINT_CLI_VER} \
+            -p @commitlint/config-conventional@${COMMITLINT_CFG_VER} \
             commitlint \
               --config .commitlintrc.yaml \
               --from "$BASE_SHA" \
@@ -53,6 +63,7 @@ jobs:
     name: Сheck code cleanliness
     permissions:
       contents: read # for actions/checkout
+    if: ${{ !cancelled() && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-slim
     steps:
       - name: Checkout codebase
@@ -78,7 +89,8 @@ jobs:
     name: Check code vulnerabilities
     permissions:
       contents: read # for actions/checkout
-    runs-on: ubuntu-slim
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest # needs cpu
     steps:
       - name: Checkout codebase
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -93,7 +105,7 @@ jobs:
 
       - name: Run govulncheck
         env: 
-          GOVULNCHECK_VER: ${{ vars.GOVULNCHECK_VER || 'v1.1.4' }}
+          GOVULNCHECK_VER: ${{ vars.GOVULNCHECK_VER || 'v1.7.0' }}
         run: |
           go run golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VER} \
             -mode=source \
@@ -105,7 +117,8 @@ jobs:
     name: Check workflows vulnerabilities
     permissions:
       contents: read # for actions/checkout
-    runs-on: ubuntu-latest # for zizmorcore/zizmor-action: needs docker
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest # needs docker
     steps:
       - name: Checkout codebase
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -113,30 +126,163 @@ jobs:
           persist-credentials: false
 
       - name: Run zizmor
-        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        uses: zizmorcore/zizmor-action@70fb788f84895a7701f5643d103d587e460b5c99 # v0.6.3
+        env:
+          ZIZMOR_VER: ${{ vars.ZIZMOR_VER || 'v1.30.0' }}
         with:
+          version: ${{ env.ZIZMOR_VER }}
+          online-audits: true
           advanced-security: false
           annotations: true
           color: true
+          config: .zizmor.yaml
+          fail-on-no-inputs: true
 
-  gitleaks:
-    name: Check hardcoded credentials
+  dockerfiles_vulncheck:
+    name: Check dockerfiles vulnerabilities
     permissions:
       contents: read # for actions/checkout
-      pull-requests: write # for gitleaks/gitleaks-action
-    runs-on: ubuntu-slim
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest # needs cpu
     steps:
       - name: Checkout codebase
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
 
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_VERSION: ${{ vars.GITLEAKS_VER || '8.30.1' }}
-          GITLEAKS_ENABLE_COMMENTS: true
-          GITLEAKS_ENABLE_SUMMARY: true
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: "build/Dockerfile*"
+          recursive: true
+          config: .hadolint.yaml
+          verbose: true
+
+  lint:
+    name: Lint
+    permissions:
+      contents: read # inherit from lint.yml
+    if: ${{ !cancelled() && github.actor != 'dependabot[bot]' }}
+    uses: $/.github/workflows/lint.yml
+    with:
+      report_name: ${{ vars.LINT_REPORT || 'lint-report' }}
+      report_ttl: 1
+
+  test:
+    name: Test
+    permissions:
+      contents: read # inherit from test.yml
+    if: ${{ !cancelled() }}
+    uses: $/.github/workflows/test.yml
+    with:
+      test_report_name: ${{ vars.TEST_REPORT || 'test-report' }}
+      test_report_ttl: 1
+      cvrg_report_name: ${{ vars.CVRG_REPORT || 'cvrg-report' }}
+      cvrg_report_ttl: 1
+
+  leak:
+    name: Leak
+    permissions:
+      contents: read # inherit from leak.yml
+    if: ${{ !cancelled() && github.actor != 'dependabot[bot]' }}
+    uses: $/.github/workflows/leak.yml
+    with:
+      report_name: ${{ vars.LEAK_REPORT || 'leak-report' }}
+      report_ttl: 1
+
+  report:
+    name: Publish reports
+    permissions:
+      actions: read # for fgrosse/go-coverage-report
+      contents: read # for fgrosse/go-coverage-report
+      checks: write # for mikepenz/action-junit-report
+      pull-requests: write # for mikepenz/action-junit-report
+    needs:
+      - lint
+      - test
+      - leak
+    if: ${{ !cancelled() && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-slim
+    outputs:
+      coverage_trend: ${{ steps.coverage.outputs.coverage_trend }}
+    env:
+      LINT_REPORT: ${{ vars.LINT_REPORT || 'lint-report' }}
+      TEST_REPORT: ${{ vars.TEST_REPORT || 'test-report' }}
+      CVRG_REPORT: ${{ vars.CVRG_REPORT || 'cvrg-report' }}
+      LEAK_REPORT: ${{ vars.LEAK_REPORT || 'leak-report' }}
+      NODE_OPTIONS: --max-old-space-size=4096 # for mikepenz/action-junit-report
+    steps:
+      - name: Download lint results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ env.LINT_REPORT }}
+
+      - name: Lint report
+        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6.4.2
+        with:
+          report_paths: ${{ env.LINT_REPORT }}
+          check_name: Lint summary
+          detailed_summary: false
+          include_time_in_summary: false
+          skip_annotations: false
+          fail_on_parse_error: true
+          require_tests: false
+          comment: true
+          updateComment: true
+
+      - name: Download test results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ env.TEST_REPORT }}
+
+      - name: Test report
+        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6.4.2
+        with:
+          report_paths: ${{ env.TEST_REPORT }}
+          check_name: Test summary
+          detailed_summary: true
+          include_time_in_summary: true
+          skip_annotations: false
+          fail_on_parse_error: true
+          require_tests: true
+          comment: true
+          updateComment: true
+
+      - name: Download leak results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ env.LEAK_REPORT }}
+
+      - name: Leak report
+        uses: mikepenz/action-junit-report@d9f48fc87bc235f7e214acf696ca5abc0a986f16 # v6.4.2
+        with:
+          report_paths: ${{ env.LEAK_REPORT }}
+          check_name: Leak summary
+          detailed_summary: false
+          include_time_in_summary: false
+          skip_annotations: false
+          fail_on_parse_error: true
+          require_tests: false
+          comment: true
+          updateComment: true
+
+      - name: Coverage report
+        id: coverage
+        uses: fgrosse/go-coverage-report@e432de98ee94a276e8f666d25bfd76347665f75b # v1.3.1
+        with:
+          coverage-artifact-name: ${{ env.CVRG_REPORT }}
+          coverage-file-name: ${{ env.CVRG_REPORT }}
+          root-package: github.com/KazZzeL/geomixer
+          trim: github.com/KazZzeL/geomixer
+          skip-comment: false
+
+  coverage_trend:
+    name: Check coverage trend
+    needs:
+      - report
+    if: ${{ !cancelled() && needs.report.result == 'success' && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-slim
+    steps:
+      - name: Fail if decreased
+        if: ${{ needs.report.outputs.coverage_trend == 'decreased' }}
+        run: echo "Coverage decreased!" && exit 1

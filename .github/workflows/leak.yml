@@ -1,0 +1,70 @@
+name: Leak
+
+on:
+  workflow_call:
+    inputs:
+      report_name:
+        description: "Artifact name for upload"
+        required: false
+        type: string
+        default: leak-report
+      report_ttl:
+        description: "Artifact TTL (days)"
+        required: false
+        type: number
+        default: -1
+
+permissions: {}
+
+env: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  leak:
+    name: Leak
+    permissions:
+      contents: read # for actions/checkout
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest # needs cpu
+    env:
+      REPORT_NAME: ${{ inputs.report_name }}
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Install betterleaks
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
+        env:
+          BETTERLEAKS_VER: ${{ vars.BETTERLEAKS_VER || 'v1.8.1' }}
+        with:
+          repo: betterleaks/betterleaks
+          tag: ${{ env.BETTERLEAKS_VER }}
+          prerelease: false
+          chmod: 0755
+          cache: true
+
+      - name: Run betterleaks
+        run: |
+          betterleaks dir . \
+            --config .betterleaks.toml \
+            --report-format junit \
+            --report-path "$REPORT_NAME" \
+            --timeout 300 \
+            --validation \
+            --verbose
+
+      - name: Upload results artifact
+        if: ${{ !cancelled() && inputs.report_ttl >= 0 }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.REPORT_NAME }}
+          path: ${{ env.REPORT_NAME }}
+          if-no-files-found: error
+          retention-days: ${{ inputs.report_ttl }}
+          overwrite: true

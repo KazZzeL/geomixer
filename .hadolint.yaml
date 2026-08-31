@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/hadolint/hadolint/refs/heads/master/contrib/hadolint.json
+
+disable-ignore-pragma: true
+failure-threshold: info
+no-color: false
+no-fail: false
+trustedRegistries:
+  - docker.io
+  - ghcr.io
+  - quay.io

@@ -57,11 +57,13 @@ checksum:
   split: false
 
 docker_digest:
-  disable: true
+  disable: false
+  name_template: "digests.txt"
 
 sboms:
   - id: archive
     artifacts: archive
+    disable: false
 
 changelog:
   disable: false
@@ -99,7 +101,30 @@ changelog:
 
 dockers_v2:
   - id: geomixer
-    disable: true
+    disable: false
+    images:
+      - '{{ envOrDefault "DOCKER_REGISTRY" "ghcr.io" }}/{{ tolower .Env.GITHUB_REPOSITORY }}'
+    dockerfile: ./build/Dockerfile.release
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    tags:
+      - 'latest'
+      - '{{ .Tag }}'
+    labels:
+      # https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+      'org.opencontainers.image.title': '{{.ProjectName}}'
+      'org.opencontainers.image.description': 'Xray geofiles merger'
+      'org.opencontainers.image.source': '{{.GitURL}}'
+      'org.opencontainers.image.url': '{{.GitURL}}'
+      'org.opencontainers.image.documentation': 'https://github.com/KazZzeL/geomixer/blob/master/README.md'
+      'org.opencontainers.image.created': '{{.Date}}'
+      'org.opencontainers.image.revision': '{{.FullCommit}}'
+      'org.opencontainers.image.version': '{{.Version}}'
+    sbom: true
+    flags:
+      - '--cache-from=type=registry,ref={{ envOrDefault "DOCKER_REGISTRY" "ghcr.io" }}/{{ tolower .Env.GITHUB_REPOSITORY }}:buildcache'
+      - '--cache-to=type=registry,ref={{ envOrDefault "DOCKER_REGISTRY" "ghcr.io" }}/{{ tolower .Env.GITHUB_REPOSITORY }}:buildcache,mode=max'
 
 signs:
   - cmd: cosign
@@ -112,14 +137,14 @@ signs:
       - "${artifact}"
       - --yes
 
-# docker_signs:
-#   - cmd: cosign
-#     artifacts: manifests
-#     output: true
-#     args:
-#       - "sign"
-#       - "${artifact}@${digest}"
-#       - --yes
+docker_signs:
+  - cmd: cosign
+    artifacts: manifests
+    output: true
+    args:
+      - "sign"
+      - "${artifact}@${digest}"
+      - --yes
 
 release:
   disable: false
