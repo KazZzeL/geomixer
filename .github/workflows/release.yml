@@ -23,6 +23,7 @@ jobs:
     name: Release
     permissions:
       contents: write # for goreleaser/goreleaser-action
+      packages: write # for ghcr.io push + buildcache (docker + cache-to=type=registry)
       id-token: write # for actions/attest
       attestations: write # for actions/attest
     if: ${{ !cancelled() }}
