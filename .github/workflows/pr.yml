@@ -275,6 +275,7 @@ jobs:
           root-package: github.com/KazZzeL/geomixer
           trim: github.com/KazZzeL/geomixer
           skip-comment: false
+          github-baseline-workflow-ref: ci.yml
 
   coverage_trend:
     name: Check coverage trend
