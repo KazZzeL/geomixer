@@ -14,11 +14,10 @@ COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY ./main.go ./main.go
 
-RUN set -eux \
-  && go build -v \
-    -o /out/main \
-    -ldflags "-extldflags '-static'" \
-    ./main.go
+RUN go build -v \
+      -o /out/main \
+      -ldflags "-extldflags '-static'" \
+      ./main.go
 
 FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 
