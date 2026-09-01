@@ -23,6 +23,11 @@ updates:
     cooldown:
       default-days: 7
     open-pull-requests-limit: 10
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   - package-ecosystem: "docker"
     directory: "/build"
