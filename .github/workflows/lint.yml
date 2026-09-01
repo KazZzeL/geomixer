@@ -1,0 +1,70 @@
+name: Lint
+
+on:
+  workflow_call:
+    inputs:
+      report_name:
+        description: "Artifact name for upload"
+        required: false
+        type: string
+        default: lint-report
+      report_ttl:
+        description: "Artifact TTL (days)"
+        required: false
+        type: number
+        default: -1
+
+permissions: {}
+
+env: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint
+    permissions:
+      contents: read # for actions/checkout
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest # needs cpu
+    env:
+      REPORT_NAME: ${{ inputs.report_name }}
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        env:
+          CLICOLOR_FORCE: "1"
+        with:
+          version-file: .tool-versions
+          install-mode: binary
+          install-only: false
+          args: |
+            --config=.golangci.yaml \
+            --fix=false \
+            --color=always \
+            --verbose=true \
+            --output.text.path=stdout \
+            --output.junit-xml.path="$REPORT_NAME"
+
+      - name: Upload results artifact
+        if: ${{ !cancelled() && inputs.report_ttl >= 0 }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.REPORT_NAME }}
+          path: ${{ env.REPORT_NAME }}
+          if-no-files-found: error
+          retention-days: ${{ inputs.report_ttl }}
+          overwrite: true

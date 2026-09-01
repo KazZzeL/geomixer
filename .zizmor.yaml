@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/zizmorcore/zizmor/refs/heads/main/support/zizmor.schema.json
+
+rules:
+  secrets-outside-env:
+    disable: true
