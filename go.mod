@@ -1,6 +1,6 @@
 module github.com/KazZzeL/geomixer
 
-go 1.27.0
+go 1.27.1
 
 require (
 	github.com/invopop/jsonschema v0.14.0
