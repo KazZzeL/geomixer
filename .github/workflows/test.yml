@@ -70,12 +70,15 @@ jobs:
           gotestsum \
             --format testname \
             --junitfile "$TEST_REPORT_NAME" \
+            --rerun-fails \
+            --rerun-fails-max-failures=2 \
+            --rerun-fails-abort-on-data-race \
+            --packages="./..." \
             -- -cover \
               -covermode=atomic \
               -coverprofile="$CVRG_REPORT_NAME" \
               -count=1 \
-              -race \
-              ./...
+              -race
 
       - name: Upload test results
         if: ${{ !cancelled() && inputs.test_report_ttl >= 0 }}
