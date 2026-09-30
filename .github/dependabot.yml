@@ -8,7 +8,7 @@ updates:
       time: "12:00" # UTC
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 1
     groups:
       github-actions:
         patterns:
@@ -37,7 +37,7 @@ updates:
       time: "12:00" # UTC
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 1
     allow:
       - dependency-name: "alpine"
         update-types:

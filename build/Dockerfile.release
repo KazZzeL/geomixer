@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS runtime
 
 RUN set -eux \
   && addgroup \
@@ -13,13 +13,13 @@ RUN set -eux \
       --no-create-home \
       app \
   && apk add --no-cache \
-      ca-certificates=20260611-r0 \
-      tzdata=2026c-r0 \
+      ca-certificates=20260909-r0 \
+      tzdata=2026d-r0 \
   && update-ca-certificates
 
-WORKDIR /app
-
 ARG TARGETPLATFORM
+
+WORKDIR /app
 
 COPY --chown=app:app $TARGETPLATFORM/geomixer /usr/local/bin/geomixer
 
