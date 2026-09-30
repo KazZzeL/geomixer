@@ -41,7 +41,7 @@ jobs:
       - name: Install betterleaks
         uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
         env:
-          BETTERLEAKS_VER: ${{ vars.BETTERLEAKS_VER || 'v1.8.1' }}
+          BETTERLEAKS_VER: ${{ vars.BETTERLEAKS_VER || 'v1.9.0' }}
         with:
           repo: betterleaks/betterleaks
           tag: ${{ env.BETTERLEAKS_VER }}
