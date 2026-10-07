@@ -16,6 +16,8 @@ type InputKind string
 type StepAction string
 
 const (
+	CurrentVersion = 1
+
 	InputKindGeo InputKind = "geofile"
 	InputKindTxt InputKind = "plain"
 	InputKindLst InputKind = "list"
@@ -32,6 +34,7 @@ var (
 	ErrMissingStepInput  = errors.New("missing step input in inputs")
 	ErrUnknownInputKind  = errors.New("unknown input kind")
 	ErrUnknownStepAction = errors.New("unknown step action")
+	ErrWrongVersion      = errors.New("wrong config version")
 	ErrAmbiguousStepInEx = errors.New("exclude and include have common categories")
 	ErrIgnoredAllIPTypes = errors.New("cannot ignore all types of ip")
 )
@@ -86,7 +89,8 @@ type (
 	}
 
 	// Config is the top-level configuration.
-	Config struct {
+	Config struct { //nolint:recvcheck // JSONSchemaExtend must use a value receiver for invopop/jsonschema
+		Version int     `json:"version,omitempty" yaml:"version" jsonschema:"description=Configuration schema version (defaults to 1 when omitted),example=1"`
 		Geosite *Runner `json:"geosite,omitempty" yaml:"geosite" jsonschema:"description=Domain (geosite) rules configuration"`
 		Geoip   *Runner `json:"geoip,omitempty"   yaml:"geoip"   jsonschema:"description=IP (geoip) rules configuration"`
 	}
@@ -108,14 +112,22 @@ func Parse(path string) (*Config, error) {
 		return nil, fmt.Errorf("parsing: %w", err)
 	}
 
-	if err := validate(cfg); err != nil {
+	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("validation: %w", err)
 	}
 
 	return cfg, nil
 }
 
-func validate(cfg *Config) error {
+func (cfg *Config) Validate() error {
+	if cfg.Version == 0 {
+		cfg.Version = CurrentVersion
+	}
+
+	if cfg.Version != CurrentVersion {
+		return fmt.Errorf("%w: got = %d, supported = %d", ErrWrongVersion, cfg.Version, CurrentVersion)
+	}
+
 	if cfg.Geosite == nil && cfg.Geoip == nil {
 		return ErrEmptyConfig
 	}

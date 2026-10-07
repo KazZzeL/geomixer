@@ -41,6 +41,13 @@
         }
       ],
       "properties": {
+        "version": {
+          "type": "integer",
+          "description": "Configuration schema version (defaults to 1 when omitted)",
+          "examples": [
+            1
+          ]
+        },
         "geosite": {
           "$ref": "#/$defs/Runner",
           "description": "Domain (geosite) rules configuration"

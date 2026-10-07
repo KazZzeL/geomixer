@@ -26,6 +26,7 @@ Config supports **JSON** and **YAML** (auto-detected by extension).
 
 ```yaml
 # config.yaml
+version: 1
 geosite:
   inputs:
     - name: v2fly
