@@ -1,5 +1,5 @@
-golang 1.27.1
+golang 1.27.2
 golangci-lint 2.14.0
-goreleaser 2.18.2
+goreleaser 2.18.3
 hadolint 2.15.1
 protoc-gen-go 1.36.12
