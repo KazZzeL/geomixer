@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS build
+FROM golang:1.27.3-alpine3.24@sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c AS build
 
 ENV CGO_ENABLED=0
 
@@ -19,7 +19,7 @@ RUN go build -v \
       -ldflags "-extldflags '-static'" \
       ./main.go
 
-FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS runtime
+FROM alpine:3.24.3@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS runtime
 
 RUN set -eux \
   && addgroup \
@@ -33,7 +33,7 @@ RUN set -eux \
       --no-create-home \
       app \
   && apk add --no-cache \
-      ca-certificates=20260909-r0 \
+      ca-certificates=20261020-r0 \
       tzdata=2026e-r0 \
   && update-ca-certificates
 

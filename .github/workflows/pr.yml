@@ -47,8 +47,8 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          COMMITLINT_CLI_VER: ${{ vars.COMMITLINT_CLI_VER || '21.2.2' }}
-          COMMITLINT_CFG_VER: ${{ vars.COMMITLINT_CFG_VER || '21.2.2' }}
+          COMMITLINT_CLI_VER: ${{ vars.COMMITLINT_CLI_VER || '21.2.4' }}
+          COMMITLINT_CFG_VER: ${{ vars.COMMITLINT_CFG_VER || '21.2.4' }}
         run: |
           npx --yes \
             -p @commitlint/cli@${COMMITLINT_CLI_VER} \
@@ -105,7 +105,7 @@ jobs:
 
       - name: Run govulncheck
         env: 
-          GOVULNCHECK_VER: ${{ vars.GOVULNCHECK_VER || 'v1.7.0' }}
+          GOVULNCHECK_VER: ${{ vars.GOVULNCHECK_VER || 'v1.9.0' }}
         run: |
           go run golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VER} \
             -mode=source \
@@ -128,7 +128,7 @@ jobs:
       - name: Run zizmor
         uses: zizmorcore/zizmor-action@85b2b9fb8e3325e7a23d7d0a9d7ba5ae0f999e3e # v0.7.1
         env:
-          ZIZMOR_VER: ${{ vars.ZIZMOR_VER || 'v1.30.0' }}
+          ZIZMOR_VER: ${{ vars.ZIZMOR_VER || 'v1.31.1' }}
         with:
           version: ${{ env.ZIZMOR_VER }}
           online-audits: true

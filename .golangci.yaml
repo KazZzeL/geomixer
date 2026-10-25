@@ -96,7 +96,7 @@ linters:
       check-type-assertions: true
     exhaustive:
       check:
-        - map
+        - mapliteral
         - switch
     exhaustruct:
       allow-empty-returns: true
