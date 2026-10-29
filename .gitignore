@@ -2,3 +2,6 @@
 dist/
 input/
 output/
+
+/.env
+/.env.*
