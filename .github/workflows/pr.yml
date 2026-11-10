@@ -218,7 +218,7 @@ jobs:
           name: ${{ env.LINT_REPORT }}
 
       - name: Lint report
-        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        uses: mikepenz/action-junit-report@8a133bfa3ecb0ea9024c1e2ae788b4c25f6cdb9d # v6.6.2
         with:
           report_paths: ${{ env.LINT_REPORT }}
           check_name: Lint summary
@@ -236,7 +236,7 @@ jobs:
           name: ${{ env.TEST_REPORT }}
 
       - name: Test report
-        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        uses: mikepenz/action-junit-report@8a133bfa3ecb0ea9024c1e2ae788b4c25f6cdb9d # v6.6.2
         with:
           report_paths: ${{ env.TEST_REPORT }}
           check_name: Test summary
@@ -254,7 +254,7 @@ jobs:
           name: ${{ env.LEAK_REPORT }}
 
       - name: Leak report
-        uses: mikepenz/action-junit-report@6ef3fdcfcd5f0b5d14df3e659ef19b8c6820f93d # v6.6.1
+        uses: mikepenz/action-junit-report@8a133bfa3ecb0ea9024c1e2ae788b4c25f6cdb9d # v6.6.2
         with:
           report_paths: ${{ env.LEAK_REPORT }}
           check_name: Leak summary
